@@ -7,6 +7,8 @@ export interface OrderTest extends Contract {
     allSellers(): Promise<OrderEntry[]>
     putBuyOrder(account: string, volume: BigNumberish, price: BigNumberish): Promise<void>;
     putSellOrder(account: string, volume: BigNumberish, price: BigNumberish): Promise<void>;
+    removeBuyOrder(account: string, id: BigNumberish): Promise<void>;
+    removeSellOrder(account: string, id: BigNumberish): Promise<void>;
     matchBuyOrder(volume: BigNumberish, price: BigNumberish): Promise<void>;
     matching(): Promise<OrderMatching>;
 }

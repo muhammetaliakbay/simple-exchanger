@@ -24,6 +24,14 @@ contract OrderTest {
         sellers.putOrder(account, volume, price, Order.Kind.Sell);
     }
 
+    function removeBuyOrder(address payable account, int id) public {
+        buyers.removeOrder(id, account);
+    }
+
+    function removeSellOrder(address payable account, int id) public {
+        sellers.removeOrder(id, account);
+    }
+
     Order.Matching public matching;
     function matchBuyOrder(uint volume, uint price) public {
         matching = buyers.matchBuyOrder(volume, price);

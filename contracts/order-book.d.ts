@@ -6,4 +6,6 @@ export interface OrderBook extends Contract {
     multiplier(): Promise<BigNumber>
     putSellOrder(price: BigNumberish): Promise<void>;
     putBuyOrder(volume: BigNumberish, price: BigNumberish): Promise<void>;
+    cancelSellOrder(id: BigNumberish): Promise<void>;
+    cancelBuyOrder(id: BigNumberish): Promise<void>;
 }
