@@ -25,7 +25,7 @@ describe("OrderBook", function() {
     });
 
     beforeEach(async function () {
-        orderBook = await deployOrderBookContract(ethers, stableToken, {
+        orderBook = await deployOrderBookContract(ethers, stableToken, 1000000, {
             "Order": order,
         })
 

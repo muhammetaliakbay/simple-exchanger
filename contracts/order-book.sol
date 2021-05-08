@@ -10,19 +10,25 @@ contract OrderBook {
     Order.List sellers;
     StableToken stableToken;
 
-    constructor(StableToken _stableToken) {
+    uint public multiplier;
+
+    constructor(StableToken _stableToken, uint _multiplier) {
         stableToken = _stableToken;
+        multiplier = _multiplier;
     }
 
     function putSellOrder(uint price) public payable {
+        require(msg.value > 0);
+        require(msg.value % multiplier == 0);
+        uint volume = msg.value / multiplier;
+
         address payable sender = payable(msg.sender);
-        uint volume = msg.value;
 
         while (true) {
             Order.Matching memory matching = sellers.matchBuyOrder(volume, price);
             if (matching.found) {
                 stableToken.transferLocked(matching.account, sender, matching.cost);
-                matching.account.transfer(matching.volume);
+                matching.account.transfer(matching.volume * multiplier);
 
                 volume = matching.sellerVolumeLeft;
 
@@ -46,7 +52,7 @@ contract OrderBook {
             Order.Matching memory matching = sellers.matchSellOrder(volume, price);
             if (matching.found) {
                 stableToken.transferLocked(sender, matching.account, matching.cost);
-                sender.transfer(matching.volume);
+                sender.transfer(matching.volume * multiplier);
 
                 volume = matching.buyerVolumeLeft;
 
