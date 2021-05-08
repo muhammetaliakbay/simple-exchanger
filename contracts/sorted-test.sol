@@ -46,9 +46,13 @@ contract SortedTest {
         deleteValue(id);
     }
 
+    function remove(uint id) public {
+        list.remove(id);
+        deleteValue(id);
+    }
+
     function at(uint offset) public view returns (string memory) {
-        uint id;
-        (id, ) = list.at(offset);
+        uint id = list.at(offset);
         return getValue(id);
     }
 }

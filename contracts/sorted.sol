@@ -7,6 +7,7 @@ library Sorted {
         bool valid;
         uint rank;
         uint nextId;
+        uint prevId;
     }
 
     struct List {
@@ -18,7 +19,7 @@ library Sorted {
 
     function getEntry(List storage list, uint id) private view returns (Entry storage entry) {
         entry = list.entryMap[id];
-        require(entry.valid);
+        require(entry.valid, "invalid entry");
     }
 
     function setEntry(List storage list, uint id, Entry memory entry) private{
@@ -35,9 +36,15 @@ library Sorted {
 
     function removeFirst(List storage list) public returns (uint id) {
         id = list.firstId;
-        require(id != NULL_ID);
+        require(id != NULL_ID, "empty list");
 
-        list.firstId = getNextId(list, id);
+        uint nextId = getNextId(list, id);
+        if (nextId != NULL_ID) {
+            Entry storage next = getEntry(list, nextId);
+            next.prevId = NULL_ID;
+        }
+
+        list.firstId = nextId;
         deleteEntry(list, id);
 
         list.length --;
@@ -45,20 +52,24 @@ library Sorted {
         return id;
     }
 
-    function remove(List storage list, uint id, uint prevId) public {
-        if (prevId == NULL_ID) {
-            require(list.firstId == id);
-        } else {
-            require(getNextId(list, prevId) == id);
-        }
+    function remove(List storage list, uint id) public {
+        Entry storage entry = getEntry(list, id);
+        require(entry.valid, "not valid entry to remove");
 
-        uint nextId = getNextId(list, id);
+        uint nextId = entry.nextId;
 
+        uint prevId = entry.prevId;
         if (prevId != NULL_ID) {
             Entry storage prev = getEntry(list, prevId);
             prev.nextId = nextId;
         } else {
+            require(list.firstId == id, "broken entry");
             list.firstId = nextId;
+        }
+
+        if (nextId != NULL_ID) {
+            Entry storage next = getEntry(list, nextId);
+            next.prevId = prevId;
         }
 
         deleteEntry(list, id);
@@ -66,22 +77,18 @@ library Sorted {
         list.length --;
     }
 
-    function at(List storage list, uint atOffset) public view returns (uint id, uint prevId) {
-        require(list.length > atOffset);
+    function at(List storage list, uint atOffset) public view returns (uint id) {
+        require(list.length > atOffset, "index out of bounds");
 
-        prevId = 0;
         id = list.firstId;
         for (uint offset = 0; offset < atOffset; offset ++) {
-            prevId = id;
             id = getNextId(list, id);
         }
     }
 
     function removeAt(List storage list, uint offset) public returns (uint id) {
-        uint prevId;
-        (id, prevId) = at(list, offset);
-        remove(list, id, prevId);
-        return id;
+        id = at(list, offset);
+        remove(list, id);
     }
 
     function insertAfter(List storage list, uint rank, uint prevId) private returns (uint id) {
@@ -96,7 +103,15 @@ library Sorted {
             list.firstId = id;
         } else {
             Entry storage prev = getEntry(list, prevId);
-            entry.nextId = prev.nextId;
+            uint nextId = prev.nextId;
+
+            if (nextId != NULL_ID) {
+                Entry storage next = getEntry(list, nextId);
+                next.prevId = id;
+            }
+
+            entry.nextId = nextId;
+            entry.prevId = prevId;
             prev.nextId = id;
         }
 
