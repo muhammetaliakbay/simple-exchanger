@@ -58,12 +58,23 @@ describe("SortedTest", function() {
         expect(await sortedTest.length()).eq(2)
     });
 
-    it("Should return all entries in correct order after removing some", async function () {
+    it("Should return all entries in correct order after removing some (using removeAt)", async function () {
         await sortedTest.insert(2, "Two", true);
         await sortedTest.insert(0, "Zero", true);
-        await sortedTest.insert(1, "One", true);
+        await sortedTest.insert(1, "One", true); // offset: 1
         await sortedTest.insert(3, "Three", true);
         await sortedTest.removeAt(1);
+
+        expect(await sortedTest.all()).deep.eq(["Zero", "Two", "Three"]);
+        expect(await sortedTest.length()).eq(3)
+    });
+
+    it("Should return all entries in correct order after removing some (using remove)", async function () {
+        await sortedTest.insert(2, "Two", true);
+        await sortedTest.insert(0, "Zero", true);
+        await sortedTest.insert(1, "One", true); // id: 3
+        await sortedTest.insert(3, "Three", true);
+        await sortedTest.remove(3);
 
         expect(await sortedTest.all()).deep.eq(["Zero", "Two", "Three"]);
         expect(await sortedTest.length()).eq(3)

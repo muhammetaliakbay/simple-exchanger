@@ -7,4 +7,5 @@ export interface SortedTest extends Contract {
     insert(rank: BigNumberish, value: string, asc: boolean): Promise<void>
     removeFirst(): Promise<void>
     removeAt(offset: BigNumberish): Promise<void>
+    remove(id: BigNumberish): Promise<void>
 }

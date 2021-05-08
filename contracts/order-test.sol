@@ -24,11 +24,11 @@ contract OrderTest {
         sellers.putOrder(account, volume, price, Order.Kind.Sell);
     }
 
-    function removeBuyOrder(address payable account, int id) public {
+    function removeBuyOrder(address payable account, uint id) public {
         buyers.removeOrder(id, account);
     }
 
-    function removeSellOrder(address payable account, int id) public {
+    function removeSellOrder(address payable account, uint id) public {
         sellers.removeOrder(id, account);
     }
 
