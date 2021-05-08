@@ -67,4 +67,19 @@ contract OrderBook {
             sellers.putOrder(sender, volume, price, Order.Kind.Sell);
         }
     }
+
+    function cancelSellOrder(uint id) public {
+        uint volume;
+        (volume, ) = sellers.removeOrder(id, msg.sender);
+
+        payable(msg.sender).transfer(volume * multiplier);
+    }
+
+    function cancelBuyOrder(uint id) public {
+        uint volume;
+        uint price;
+        (volume, price) = buyers.removeOrder(id, msg.sender);
+
+        stableToken.unlock(msg.sender, volume * price);
+    }
 }

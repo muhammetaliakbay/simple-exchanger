@@ -152,4 +152,15 @@ library Order {
 
         setEntry(list, id, entry);
     }
+
+    function removeOrder(List storage list, uint id, address account) public returns (uint volume, uint price) {
+        Entry memory order = getEntry(list, id);
+        require(order.account == account);
+
+        volume = order.volume;
+        price = order.price;
+
+        list.sortedList.remove(id);
+        deleteEntry(list, id);
+    }
 }
