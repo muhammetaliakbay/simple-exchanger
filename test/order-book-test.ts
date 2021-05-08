@@ -21,7 +21,7 @@ describe("OrderBook", function() {
         ));
 
         order = await deployOrderLibrary(ethers);
-        stableToken = await deployStableToken(ethers);
+        stableToken = await deployStableToken(ethers, "EUR", 100);
     });
 
     beforeEach(async function () {

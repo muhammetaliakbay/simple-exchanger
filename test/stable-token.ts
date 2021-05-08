@@ -13,7 +13,7 @@ describe("StableToken", function() {
     });
 
     beforeEach(async function () {
-        stableToken = await deployStableToken(ethers);
+        stableToken = await deployStableToken(ethers, "EUR", 100);
     });
 
     it("Should mint successfully", async function () {

@@ -1,7 +1,10 @@
 import {Contract} from "ethers";
-import {BigNumberish} from "@ethersproject/bignumber";
+import {BigNumber, BigNumberish} from "@ethersproject/bignumber";
 
 export interface StableToken extends Contract {
+    admin(): Promise<string>
+    currency(): Promise<string>
+    divisor(): Promise<BigNumber>
     addManager(newManager: string): Promise<void>
     mint(to: string, amount: BigNumberish): Promise<void>
     burn(from: string, amount: BigNumberish): Promise<void>

@@ -8,8 +8,13 @@ contract StableToken {
     mapping(address => uint256) balances;
     mapping(address => uint256) lockedBalances;
 
-    constructor() {
+    string public currency;
+    uint public divisor;
+
+    constructor(string memory _currency, uint _divisor) {
         admin = msg.sender;
+        currency = _currency;
+        divisor = _divisor;
     }
 
     modifier isAdmin() {
