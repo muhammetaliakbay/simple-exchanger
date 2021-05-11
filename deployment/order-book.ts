@@ -3,6 +3,7 @@ import {HardhatEthersHelpers} from "@nomiclabs/hardhat-ethers/types";
 import {OrderBook} from "../contracts/order-book";
 import {deployOrderLibrary} from "./order";
 import {StableToken} from "../contracts/stable-token";
+import {SYNC} from "./sync";
 
 export async function deployOrderBook(
     ethers: HardhatEthersHelpers,
@@ -18,10 +19,8 @@ export async function deployOrderBook(
         }
     });
 
-    const orderBook = await OrderBook.deploy(
+    return await SYNC.runDeploy(() => OrderBook.deploy(
         stableToken.address,
         precision
-    )
-    await orderBook.deployed();
-    return orderBook as OrderBook;
+    ) as Promise<OrderBook>);
 }
