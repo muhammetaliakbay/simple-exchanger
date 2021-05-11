@@ -67,6 +67,12 @@ export function WithProvider(
         provider: ethers.providers.Web3Provider
     }
 ) {
+    const currency: Currency = useMemo(
+        () => ({
+            code: 'ETH',
+            precision: 18
+        }), []
+    );
     const [addresses] = usePromise(
         () => provider.listAccounts(),
         [provider]
@@ -82,7 +88,7 @@ export function WithProvider(
         [signer, address]
     )
     const client = useMemo(
-        () => new BaseClient(provider),
+        () => new BaseClient(provider, currency),
         [provider]
     )
     return <Router>

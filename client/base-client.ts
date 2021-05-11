@@ -43,13 +43,9 @@ function sortEventsAndRemoveDuplicates(events: Event[]): Event[] {
 export class BaseClient {
 
     constructor(
-        readonly provider: Provider
+        readonly provider: Provider,
+        readonly currency: Currency
     ) {
-    }
-
-    readonly currency: Currency = {
-        code: 'ETH',
-        precision: 18
     }
 
     readonly blockNumber$: Observable<number> = merge(
