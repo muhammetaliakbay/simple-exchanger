@@ -17,7 +17,6 @@ import {ContractDefinition} from "../instances/loader";
 import {StableTokenClient} from "./stable-token";
 import {ExchangerClient} from "./exchanger";
 import {OrderBookClient} from "./order-book";
-import {ExchangerDefinition} from "../instances/definitions";
 import {Currency} from "./currency";
 
 function sortEventsAndRemoveDuplicates(events: Event[]): Event[] {
@@ -127,21 +126,23 @@ export class BaseClient {
         )
     }
 
+    async resolveName(name: string): Promise<string> {
+        return await this.provider.resolveName(name)
+    }
+
     private contractCache: {
         [name: string]: {
             [address: string]: ExtendedContract<any>
         }
     } = {}
-    getContract<T extends ExtendedContract<T>>(definition: ContractDefinition<T>, address?: string) {
-        address ??= definition.loadDefaultAddress();
+    getContract<T extends ExtendedContract<T>>(definition: ContractDefinition<T>, address: string) {
         return this.contractCache[address] ??= definition.loadContract(address)
     }
 
     private exchangerCache: {
         [address: string]: ExchangerClient
     } = {}
-    getExchangerClient(address?: string) {
-        address ??= ExchangerDefinition.loadDefaultAddress();
+    getExchangerClient(address: string) {
         return this.exchangerCache[address] ??= new ExchangerClient(this, address)
     }
 

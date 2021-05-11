@@ -17,9 +17,9 @@ export class OrderBookClient {
     readonly contract: OrderBook;
     constructor(
         readonly baseClient: BaseClient,
-        contract?: OrderBook | string
+        contract: OrderBook | string
     ) {
-        if (contract == undefined || typeof contract == "string") {
+        if (typeof contract == "string") {
             contract = OrderBookDefinition.loadContract(contract).connect(baseClient.provider)
         }
         this.contract = contract;

@@ -16,9 +16,9 @@ export class StableTokenClient {
     readonly contract: StableToken;
     constructor(
         readonly baseClient: BaseClient,
-        contract?: StableToken | string
+        contract: StableToken | string
     ) {
-        if (contract == undefined || typeof contract == "string") {
+        if (typeof contract == "string") {
             contract = StableTokenDefinition.loadContract(contract).connect(baseClient.provider)
         }
         this.contract = contract;

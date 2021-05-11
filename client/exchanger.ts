@@ -9,9 +9,9 @@ export class ExchangerClient {
     readonly contract: Exchanger;
     constructor(
         private baseClient: BaseClient,
-        contract?: Exchanger | string
+        contract: Exchanger | string
     ) {
-        if (contract == undefined || typeof contract == "string") {
+        if (typeof contract == "string") {
             contract = ExchangerDefinition.loadContract(contract).connect(baseClient.provider)
         }
         this.contract = contract;
