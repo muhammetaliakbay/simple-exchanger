@@ -120,22 +120,25 @@ library Sorted {
         list.length ++;
     }
 
-    function locate(List storage list, uint rank, bool asc) private view returns (uint prevId) {
+    function locate(List storage list, uint rank, bool asc) private view returns (uint prevId, uint index) {
         prevId = NULL_ID;
         uint anchorId = list.firstId;
+        index = 0;
 
         while(anchorId != NULL_ID) {
             Entry storage anchor = getEntry(list, anchorId);
             if ((asc && rank < anchor.rank) || (!asc && rank > anchor.rank)) {
                 break;
             }
+            index ++;
             prevId = anchorId;
             anchorId = anchor.nextId;
         }
     }
 
-    function insert(List storage list, uint rank, bool asc) public returns (uint id) {
-        uint prevId = locate(list, rank, asc);
-        return insertAfter(list, rank, prevId);
+    function insert(List storage list, uint rank, bool asc) public returns (uint id, uint index) {
+        uint prevId;
+        (prevId, index) = locate(list, rank, asc);
+        id = insertAfter(list, rank, prevId);
     }
 }
