@@ -6,7 +6,11 @@
     "esModuleInterop": true,
     "outDir": "dist",
     "noImplicitAny": false,
+    "jsx": "react",
+    "sourceMap": true,
+    "resolveJsonModule": true,
   },
-  "include": ["./scripts", "./test"],
+  "include": [
+    "./tasks", "./test", "./app", "./client"],
   "files": ["./hardhat.config.ts"]
 }
