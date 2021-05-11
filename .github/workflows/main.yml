@@ -28,7 +28,7 @@ jobs:
       # Runs a single command using the runners shell
       - name: Install project dependencies, compile and bundle sources
         run: |
-          npm ci &
+          npm ci &&
           npm run build-production
 
       - name: Deploy typedocs and demo web application
