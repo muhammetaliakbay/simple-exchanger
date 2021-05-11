@@ -1,4 +1,4 @@
-import {HardhatUserConfig, task, types} from "hardhat/config";
+import {HardhatUserConfig, task} from "hardhat/config";
 import '@nomiclabs/hardhat-waffle';
 
 function loadTaskMethod(name: string) {
@@ -40,5 +40,16 @@ task("fund", "Fund from first signer")
 
 module.exports = {
     solidity: "0.8.4",
-    defaultNetwork: 'localhost'
+    defaultNetwork: 'localhost',
+    networks: {
+        ...(
+            process.env.ROPSTEN_URL ? {
+                ropsten: {
+                    url: process.env.ROPSTEN_URL,
+                    chainId: 3,
+                    accounts: [process.env.ROPSTEN_PRIVATEKEY]
+                }
+            }: {}
+        )
+    }
 } as HardhatUserConfig;
