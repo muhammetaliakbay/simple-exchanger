@@ -5,6 +5,7 @@
   "scripts": {
     "test": "hardhat test --network hardhat",
     "node-dev": "hardhat node",
+    "compile-contracts": "hardhat compile",
     "deploy-dev": "hardhat deploy",
     "build-dev": "webpack --config=webpack.config.js --mode=development",
     "build-production": "webpack --config=webpack.config.js --mode=production",
