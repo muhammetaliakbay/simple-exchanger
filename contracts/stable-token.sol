@@ -8,17 +8,26 @@ contract StableToken {
     mapping(address => uint256) balances;
     mapping(address => uint256) lockedBalances;
 
-    string public currency;
-    uint public divisor;
+    string public code;
+    uint8 public precision;
 
-    constructor(string memory _currency, uint _divisor) {
+    constructor(string memory _code, uint8 _precision) {
         admin = msg.sender;
-        currency = _currency;
-        divisor = _divisor;
+        code = _code;
+        precision = _precision;
+    }
+
+    function getCurrency() public view returns (Currency memory currency) {
+        currency.code = code;
+        currency.precision = precision;
+    }
+
+    function getManager() private view returns (address manager) {
+        return msg.sender;
     }
 
     modifier isAdmin() {
-        require(msg.sender == admin);
+        require(msg.sender == admin, "not an admin");
         _;
     }
     modifier isManager() {
@@ -30,7 +39,7 @@ contract StableToken {
                     break;
                 }
             }
-            require(found);
+            require(found, "not a manager");
         }
         _;
     }
