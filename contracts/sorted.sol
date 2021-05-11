@@ -31,7 +31,7 @@ library Sorted {
     }
 
     function getNextId(List storage list, uint id) public view returns (uint nextId) {
-        return getEntry(list, id).nextId;
+        nextId = getEntry(list, id).nextId;
     }
 
     function removeFirst(List storage list) public returns (uint id) {
@@ -48,8 +48,6 @@ library Sorted {
         deleteEntry(list, id);
 
         list.length --;
-
-        return id;
     }
 
     function remove(List storage list, uint id) public {
@@ -100,6 +98,7 @@ library Sorted {
 
         if (prevId == NULL_ID) {
             entry.nextId = list.firstId;
+            entry.prevId = NULL_ID;
             list.firstId = id;
         } else {
             Entry storage prev = getEntry(list, prevId);
