@@ -6,7 +6,8 @@
     "test": "hardhat test --network hardhat",
     "node-dev": "hardhat node",
     "compile-contracts": "hardhat compile",
-    "deploy-dev": "hardhat deploy",
+    "deploy-dev": "hardhat deploy --network hardhat",
+    "deploy-ropsten": "hardhat deploy --network ropsten",
     "build-dev": "webpack --config=webpack.config.js --mode=development",
     "build-production": "webpack --config=webpack.config.js --mode=production",
     "serve-dev": "webpack serve --config=webpack.config.js --mode=development"
