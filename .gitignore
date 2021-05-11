@@ -5,3 +5,6 @@ node_modules
 /dist
 /abi
 /runtime
+.env.local
+/deployment.json
+/dist
