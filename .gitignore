@@ -2,3 +2,6 @@ node_modules
 /artifacts
 /cache
 .idea
+/dist
+/abi
+/runtime
