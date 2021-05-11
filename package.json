@@ -3,10 +3,11 @@
   "name": "simple-exchange",
   "version": "0.0.0",
   "scripts": {
-    "test": "hardhat test",
+    "test": "hardhat test --network hardhat",
     "node-dev": "hardhat node",
     "deploy-dev": "hardhat deploy",
     "build-dev": "webpack --config=webpack.config.js --mode=development",
+    "build-production": "webpack --config=webpack.config.js --mode=production",
     "serve-dev": "webpack serve --config=webpack.config.js --mode=development"
   },
   "dependencies": {
