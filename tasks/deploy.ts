@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import stableCurrencies from "../stable-currencies.json";
 import {deployStableToken} from "../deployment/stable-token";
 import {saveRuntimeData} from "../deployment/runtime";
 import {ExchangerDefinition} from "../instances/definitions";
@@ -15,8 +16,8 @@ export default async function() {
     const exchanger = await deployExchanger(ethers);
     saveRuntimeData(ExchangerDefinition, exchanger)
 
-    const currencies = ['EUR', 'USD', 'TRY', 'INR', 'JPY']
-    for (const currency of currencies) {
+    for (const currency of stableCurrencies) {
+
         console.log("Deploying StableToken", currency)
         const stableToken = await deployStableToken(ethers, currency, 2);
         console.log("Deploying OrderBook")
