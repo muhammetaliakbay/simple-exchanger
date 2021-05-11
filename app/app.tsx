@@ -1,8 +1,9 @@
 import React, {useMemo, useState} from "react";
 import {
-    BrowserRouter as Router,
+    HashRouter as Router,
     Switch,
     Route,
+    Redirect
 } from "react-router-dom";
 import {BaseClientProvider} from "./base-client-provider";
 import {BaseClient} from "../client/base-client";
@@ -99,6 +100,7 @@ export function WithProvider(
         <BaseClientProvider client={client}>
             <WalletProvider wallet={wallet}>
                 <Switch>
+                    <Route exact path={["/", ""]} render={() => <Redirect to="/official.simple-exchanger.eth" />} />
                     <Route path="/:exchangerAddress">
                         <ExchangerPage />
                     </Route>
