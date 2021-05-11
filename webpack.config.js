@@ -5,7 +5,9 @@ module.exports = {
     entry: './app/index.tsx',
     devtool: 'inline-source-map',
     devServer: {
-        historyApiFallback: true
+        historyApiFallback: {
+            disableDotRule: true
+        }
     },
     module: {
         rules: [
