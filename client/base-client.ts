@@ -10,7 +10,6 @@ import {
     toArray
 } from "rxjs/operators";
 import {Contract, Event} from "ethers"
-import {exhaustMapWithTrailing} from "rxjs-exhaustmap-with-trailing";
 import {Provider} from "@ethersproject/abstract-provider";
 import {ExtendedContract, ExtendedEventFilter} from "../contracts/extended";
 import {ContractDefinition} from "../instances/loader";
@@ -18,6 +17,7 @@ import {StableTokenClient} from "./stable-token";
 import {ExchangerClient} from "./exchanger";
 import {OrderBookClient} from "./order-book";
 import {Currency} from "./currency";
+import {exhaustMapWithTrailing} from "./reactive-util";
 
 function sortEventsAndRemoveDuplicates(events: Event[]): Event[] {
     const sorted = events.sort(
