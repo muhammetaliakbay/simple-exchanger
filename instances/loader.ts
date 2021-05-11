@@ -9,24 +9,14 @@ export class ContractDefinition<T extends ExtendedContract<T>> {
     }
 
     private artifact?: ExtendedArtifact<T>
-    private defaultAddress?: string
-    private deployer?: string
 
     loadArtifact(): ExtendedArtifact<T> {
         return this.artifact ??= require(`../artifacts/contracts/${this.fileName}/${this.contractName}`)
     }
 
-    loadDefaultAddress(): string {
-        return this.defaultAddress ??= require(`../runtime/${this.contractName}/address.json`)
-    }
-
-    loadDeployer(): string {
-        return this.deployer ??= require(`../runtime/${this.contractName}/deployer.json`)
-    }
-
-    loadContract(address?: string): T {
+    loadContract(address: string): T {
         return ContractFactory.getContract(
-            address ?? this.loadDefaultAddress(),
+            address,
             this.loadArtifact().abi
         ) as T
     }
