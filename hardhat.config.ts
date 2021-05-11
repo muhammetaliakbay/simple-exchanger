@@ -33,10 +33,6 @@ task("buy", "Put buy order")
     .addParam("price", "Price")
     .setAction(loadTaskMethod("buy"));
 
-task("tokens", "View stable tokens")
-    .addParam("account", "The account's address")
-    .setAction(loadTaskMethod("view-stable-token"));
-
 task("fund", "Fund from first signer")
     .addParam("account", "The account's address")
     .addParam("amount", "Amount to fund")
