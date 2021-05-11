@@ -38,7 +38,7 @@ jobs:
         run: |
           npm run build-production &&
           >dist/.nojekyll &&
-          echo -e "simple-exchanger.muhammetaliakbay.com" >> CNAME
+          echo -e "simple-exchanger.muhammetaliakbay.com" >> dist/CNAME
 
       - name: Deploy typedocs and demo web application
         uses: JamesIves/github-pages-deploy-action@3.7.1
