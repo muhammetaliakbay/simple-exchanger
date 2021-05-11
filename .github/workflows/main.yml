@@ -35,7 +35,9 @@ jobs:
         run: npm test
 
       - name: Compile and bundle web app
-        run: npm run build-production
+        run: |
+          npm run build-production &&
+          >dist/.nojekyll
 
       - name: Deploy typedocs and demo web application
         uses: JamesIves/github-pages-deploy-action@3.7.1
