@@ -32,7 +32,9 @@ contract SortedTest {
     }
 
     function insert(uint rank, string memory value, bool asc) public {
-        uint id = list.insert(rank, asc);
+        uint id;
+        uint index;
+        (id, index) = list.insert(rank, asc);
         setValue(id, value);
     }
 
