@@ -1,6 +1,5 @@
 import React, {useState} from "react";
 import {useParams,} from "react-router-dom";
-import {useBaseClient} from "./base-client-provider";
 import {useObservable} from "react-use-observable";
 import usePromise from "react-use-promise";
 import {OrderBookClient} from "../client/order-book";
@@ -25,14 +24,40 @@ import {AmountView} from "./amount-view";
 import {OrderType} from "../contracts/order-book";
 import {useWallet} from "./wallet-provider";
 import {Wallet} from "../client/wallet";
+import {ExchangerClient} from "../client/exchanger";
 
-export function OrderBookPage() {
-    let {orderBookAddress} = useParams() as {orderBookAddress: string}
+export function OrderBookPage(
+    {
+        exchanger
+    }: {
+        exchanger: ExchangerClient
+    }
+) {
+    let {currency} = useParams() as {currency: string}
 
-    const baseClient = useBaseClient();
-    const orderBook = baseClient.getOrderBookClient(orderBookAddress)
+    const [orderBook, , state] = usePromise(
+        async () => {
+            const stableToken = await exchanger.getStableToken(currency);
+            if (stableToken == null) {
+                return null;
+            }
+            return await exchanger.getOrderBook(stableToken);
+        }, [currency, exchanger]
+    )
 
-    return <OrderBookView orderBook={orderBook} />
+    return <>
+        {state === 'pending' && <>
+            Resolving order-book...
+        </>}
+        {state === 'rejected' && <>
+            Couldn't resolve exchanger address!
+        </>}
+        {state === 'resolved' && orderBook == null && <>
+            The exchanger doesn't support the currency: {currency}
+        </>}
+
+        {state === 'resolved' && orderBook && <OrderBookView orderBook={orderBook} />}
+    </>
 }
 
 export function OrderBookView(

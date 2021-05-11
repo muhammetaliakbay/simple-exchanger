@@ -1,30 +1,61 @@
 import React from "react";
 import {
-    Link,
-    useParams
+    Link, Route,
+    Switch,
+    useParams, useRouteMatch
 } from "react-router-dom";
 import {useBaseClient} from "./base-client-provider";
 import {useObservable} from "react-use-observable";
 import usePromise from "react-use-promise";
 import {ExchangerClient} from "../client/exchanger";
-import {ExchangerDefinition} from "../instances/definitions";
 import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@material-ui/core";
 import {OrderBookClient} from "../client/order-book";
 import {StableTokenName} from "./stable-token";
 import {useWallet} from "./wallet-provider";
 import {WalletOverview} from "./wallet-overview";
 import {AmountView} from "./amount-view";
+import {ethers} from "ethers";
+import {OrderBookPage} from "./order-book-page";
 
 export function ExchangerPage() {
     let {exchangerAddress} = useParams() as {exchangerAddress: string}
-    if (exchangerAddress === 'default') {
-        exchangerAddress = ExchangerDefinition.loadDefaultAddress();
-    }
 
     const baseClient = useBaseClient();
-    const exchanger = baseClient.getExchangerClient(exchangerAddress)
 
-    return <ExchangerView exchanger={exchanger} />
+    const [resolvedAddress, , state] = usePromise(
+        async () => {
+            if (ethers.utils.isAddress(exchangerAddress)) {
+                return exchangerAddress
+            } else {
+                return baseClient.resolveName(exchangerAddress);
+            }
+        }, [exchangerAddress, baseClient]
+    )
+
+    const exchanger = resolvedAddress && baseClient.getExchangerClient(resolvedAddress)
+
+    const {path} = useRouteMatch();
+
+    return <>
+        {state === 'pending' && <>
+            Resolving exchanger address...
+        </>}
+        {state === 'rejected' && <>
+            Couldn't resolve exchanger address!
+        </>}
+        {state === 'resolved' && resolvedAddress == null && <>
+            Address is not found
+        </>}
+
+        {state === 'resolved' && exchanger && <Switch>
+            <Route exact path={`${path}`}>
+                <ExchangerView exchanger={exchanger} />
+            </Route>
+            <Route path={`${path}/:currency`}>
+                <OrderBookPage exchanger={exchanger} />
+            </Route>
+        </Switch>}
+    </>
 }
 
 export function ExchangerView(
@@ -71,6 +102,8 @@ export function OrderBookRow(
     const currency = orderBook.baseClient.currency;
     const [stableCurrency] = usePromise(async () => await stableToken?.getCurrency(), [stableToken])
 
+    const {url} = useRouteMatch();
+
     return <TableRow>
         <TableCell>
             {stableToken && <StableTokenName token={stableToken} />}
@@ -82,9 +115,9 @@ export function OrderBookRow(
             {stats && stableCurrency && <AmountView amount={stats.buyersBalance} currency={stableCurrency} />}
         </TableCell>
         <TableCell>
-            <Link to={`/order-books/${orderBook.contract.address}`}>
+            {stats && stableCurrency && <Link to={`${url}/${stableCurrency.code}`}>
                 <Button>Trade</Button>
-            </Link>
+            </Link>}
         </TableCell>
     </TableRow>
 }
