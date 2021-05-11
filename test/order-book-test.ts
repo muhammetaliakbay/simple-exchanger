@@ -1,10 +1,8 @@
 import { ethers } from "hardhat";
-import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "ethers";
-import {expect} from "chai";
 import {OrderBook} from "../contracts/order-book";
 import {StableToken} from "../contracts/stable-token";
-import {deployOrderBookContract} from "../deployment/order-book";
+import {deployOrderBook} from "../deployment/order-book";
 import {deployOrderLibrary} from "../deployment/order";
 import {deployStableToken} from "../deployment/stable-token";
 
@@ -25,7 +23,7 @@ describe("OrderBook", function() {
     });
 
     beforeEach(async function () {
-        orderBook = await deployOrderBookContract(ethers, stableToken, 1000000, {
+        orderBook = await deployOrderBook(ethers, stableToken, 18, {
             "Order": order,
         })
 

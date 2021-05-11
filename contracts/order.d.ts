@@ -1,10 +1,14 @@
-import { BigNumberish } from "@ethersproject/bignumber";
+import {BigNumber, BigNumberish} from "@ethersproject/bignumber";
 
-export type OrderEntry = [
+export interface OrderEntry {
     account: string,
-    volume: BigNumberish,
-    price: BigNumberish
-];
+    amount: BigNumber,
+    price: BigNumber
+}
+export interface OrderEntryWithId {
+    id: BigNumber,
+    entry: OrderEntry
+}
 
 export type OrderMatching = [
     found: boolean,

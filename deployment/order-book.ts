@@ -1,15 +1,13 @@
 import { Contract } from "ethers";
 import {HardhatEthersHelpers} from "@nomiclabs/hardhat-ethers/types";
-import {deploySortedLibrary} from "./sorted";
 import {OrderBook} from "../contracts/order-book";
 import {deployOrderLibrary} from "./order";
 import {StableToken} from "../contracts/stable-token";
-import {deployStableToken} from "./stable-token";
-import {BigNumberish} from "@ethersproject/bignumber";
 
-export async function deployOrderBookContract(
+export async function deployOrderBook(
     ethers: HardhatEthersHelpers,
-    stableToken: StableToken, multiplier: BigNumberish,
+    stableToken: StableToken,
+    precision: number,
     libraries?: {
         "Order"?: Contract
     }
@@ -21,7 +19,8 @@ export async function deployOrderBookContract(
     });
 
     const orderBook = await OrderBook.deploy(
-        stableToken.address, multiplier
+        stableToken.address,
+        precision
     )
     await orderBook.deployed();
     return orderBook as OrderBook;

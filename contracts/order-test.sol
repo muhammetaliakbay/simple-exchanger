@@ -5,19 +5,26 @@ import "./order.sol";
 contract OrderTest {
     using Order for Order.List;
 
+    uint8 public precision;
+    uint public divider;
+    constructor(uint8 _precision) {
+        precision = _precision;
+        divider = 10 ** _precision;
+    }
+
     Order.List buyers;
     Order.List sellers;
 
-    function allBuyers() public view returns (Order.Entry[] memory) {
+    function allBuyers() public view returns (Order.EntryWithId[] memory) {
         return buyers.all();
     }
 
-    function allSellers() public view returns (Order.Entry[] memory) {
+    function allSellers() public view returns (Order.EntryWithId[] memory) {
         return sellers.all();
     }
 
-    function putBuyOrder(address payable account, uint volume, uint price) public {
-        buyers.putOrder(account, volume, price, Order.Kind.Buy);
+    function putBuyOrder(address payable account, uint balance, uint price) public {
+        buyers.putOrder(account, balance, price, Order.Kind.Buy);
     }
 
     function putSellOrder(address payable account, uint volume, uint price) public {
@@ -33,10 +40,10 @@ contract OrderTest {
     }
 
     Order.Matching public matching;
-    function matchBuyOrder(uint volume, uint price) public {
-        matching = buyers.matchBuyOrder(volume, price);
+    function matchBuyOrder(uint balance, uint price) public {
+        matching = buyers.matchBuyOrder(balance, price, divider);
     }
     function matchSellOrder(uint volume, uint price) public {
-        matching = buyers.matchSellOrder(volume, price);
+        matching = buyers.matchSellOrder(volume, price, divider);
     }
 }
