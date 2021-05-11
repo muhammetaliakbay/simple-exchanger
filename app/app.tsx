@@ -10,10 +10,11 @@ import {ethers} from "ethers";
 import {ExchangerPage} from "./exchanger-page";
 import {Wallet} from "../client/wallet";
 import {WalletProvider} from "./wallet-provider";
-import {OrderBookPage} from "./order-book-page";
 import usePromise from "react-use-promise";
 import detectEthereumProvider from "@metamask/detect-provider";
 import {Button, MenuItem, Select} from "@material-ui/core";
+import {Currency} from "../client/currency";
+import ETH from "../eth.json";
 
 export function App() {
     const [providerTry, setProviderTry] = useState(0);
@@ -67,12 +68,7 @@ export function WithProvider(
         provider: ethers.providers.Web3Provider
     }
 ) {
-    const currency: Currency = useMemo(
-        () => ({
-            code: 'ETH',
-            precision: 18
-        }), []
-    );
+    const currency: Currency = ETH;
     const [addresses] = usePromise(
         () => provider.listAccounts(),
         [provider]
@@ -99,14 +95,12 @@ export function WithProvider(
                 </MenuItem>
             )
         }</Select>}
+        <br />
         <BaseClientProvider client={client}>
             <WalletProvider wallet={wallet}>
                 <Switch>
-                    <Route path="/exchangers/:exchangerAddress">
+                    <Route path="/:exchangerAddress">
                         <ExchangerPage />
-                    </Route>
-                    <Route path="/order-books/:orderBookAddress">
-                        <OrderBookPage />
                     </Route>
                 </Switch>
             </WalletProvider>
