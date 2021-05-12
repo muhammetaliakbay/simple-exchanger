@@ -9,7 +9,7 @@ import {
     tap,
     toArray
 } from "rxjs/operators";
-import {Contract, Event} from "ethers"
+import {BigNumber, Contract, Event} from "ethers"
 import {Provider} from "@ethersproject/abstract-provider";
 import {ExtendedContract, ExtendedEventFilter} from "../contracts/extended";
 import {ContractDefinition} from "../instances/loader";
@@ -161,5 +161,17 @@ export class BaseClient {
     } = {}
     getOrderBookClient(address: string) {
         return this.orderBookCache[address] ??= new OrderBookClient(this, address)
+    }
+
+    private balanceCache: {
+        [address: string]: Observable<BigNumber>
+    } = {}
+    getBalance(address: string): Observable<BigNumber> {
+        return this.balanceCache[address] ??= this.blockNumber$.pipe(
+            exhaustMapWithTrailing(
+                blockNumber => this.provider.getBalance(address, blockNumber)
+            ),
+            shareReplay(1)
+        )
     }
 }
