@@ -4,10 +4,11 @@ import {useObservable} from "react-use-observable";
 import usePromise from "react-use-promise";
 import {OrderBookClient} from "../client/order-book";
 import {
+    Box,
     Button,
     Card,
     CardActions,
-    CardContent,
+    CardContent, Grid, Hidden,
     Paper,
     Table,
     TableBody,
@@ -72,11 +73,17 @@ export function OrderBookView(
 ) {
     const wallet = useWallet();
 
-    return <>
-        {wallet && <SellOrderForm orderBook={orderBook} wallet={wallet} />}
-        {wallet && <BuyOrderForm orderBook={orderBook} wallet={wallet} />}
+    return <Grid container spacing={3}>
+        {wallet && <>
+            <Hidden mdDown><Grid item xs={3} /></Hidden>
+            <SellOrderForm orderBook={orderBook} wallet={wallet} />
+        </>}
+        {wallet && <>
+            <BuyOrderForm orderBook={orderBook} wallet={wallet} />
+            <Hidden mdDown><Grid item xs={3} /></Hidden>
+        </>}
         <OrderStocks orderBook={orderBook} />
-    </>
+    </Grid>
 }
 
 export function SellOrderForm(
@@ -132,7 +139,7 @@ export function SellOrderForm(
         }
     }
 
-    return <>{
+    return <Grid item sm={6} lg={3}>{
         currency && <Card>
             <CardContent>
                 <AmountInput currency={orderBook.baseClient.currency}
@@ -152,7 +159,7 @@ export function SellOrderForm(
                 </Button>
             </CardActions>
         </Card>
-    }</>
+    }</Grid>
 }
 
 export function BuyOrderForm(
@@ -208,7 +215,7 @@ export function BuyOrderForm(
         }
     }
 
-    return <>{
+    return <Grid item sm={6} lg={3}>{
         currency && <Card>
             <CardContent>
                 <AmountInput currency={currency}
@@ -228,7 +235,7 @@ export function BuyOrderForm(
                 </Button>
             </CardActions>
         </Card>
-    }</>
+    }</Grid>
 }
 
 export function OrderStocks(
@@ -247,18 +254,22 @@ export function OrderStocks(
 
     return <>{
         stableTokenCurrency && orders && <>
-            <OrderTable orderBook={orderBook}
-                        wallet={wallet}
-                        currency={orderBook.baseClient.currency}
-                        stableTokenCurrency={stableTokenCurrency}
-                        orderType={OrderType.Sell}
-                        orders={orders.sellers}/>
-            <OrderTable orderBook={orderBook}
-                        wallet={wallet}
-                        currency={orderBook.baseClient.currency}
-                        stableTokenCurrency={stableTokenCurrency}
-                        orderType={OrderType.Buy}
-                        orders={orders.buyers}/>
+            <Grid item sm={6}>
+                <OrderTable orderBook={orderBook}
+                            wallet={wallet}
+                            currency={orderBook.baseClient.currency}
+                            stableTokenCurrency={stableTokenCurrency}
+                            orderType={OrderType.Sell}
+                            orders={orders.sellers}/>
+            </Grid>
+            <Grid item sm={6}>
+                <OrderTable orderBook={orderBook}
+                            wallet={wallet}
+                            currency={orderBook.baseClient.currency}
+                            stableTokenCurrency={stableTokenCurrency}
+                            orderType={OrderType.Buy}
+                            orders={orders.buyers}/>
+            </Grid>
         </>
     }</>
 }
@@ -282,14 +293,14 @@ function OrderTable(
 ) {
     const [cancelsTransactions, error] = useObservable(
         () => wallet == undefined ? of(undefined) : orderBook[
-                orderType === OrderType.Buy ? "watchCancelBuyTransactions" : "watchCancelSellTransactions"
+            orderType === OrderType.Buy ? "watchCancelBuyTransactions" : "watchCancelSellTransactions"
             ](wallet.getSigner()),
         [orderBook, wallet]
     )
     const pendingCancelTransactions = cancelsTransactions?.filter(tx => tx.state === TransactionState.Pending)?.length
 
     return <TableContainer component={Paper}>
-        <Table>
+        <Table size="small">
             <TableHead>
                 <TableRow>
                     {orderType === OrderType.Sell && <TableCell>Volume</TableCell>}
