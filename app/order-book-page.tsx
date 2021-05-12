@@ -4,11 +4,12 @@ import {useObservable} from "react-use-observable";
 import usePromise from "react-use-promise";
 import {OrderBookClient} from "../client/order-book";
 import {
-    Box,
     Button,
     Card,
     CardActions,
-    CardContent, Grid, Hidden,
+    CardContent,
+    Grid,
+    Hidden,
     Paper,
     Table,
     TableBody,
@@ -76,38 +77,39 @@ export function OrderBookView(
     return <Grid container spacing={3}>
         {wallet && <>
             <Hidden mdDown><Grid item xs={3} /></Hidden>
-            <SellOrderForm orderBook={orderBook} wallet={wallet} />
-        </>}
-        {wallet && <>
-            <BuyOrderForm orderBook={orderBook} wallet={wallet} />
+            <OrderForm orderBook={orderBook} wallet={wallet} orderType={OrderType.Sell} />
+
+            <OrderForm orderBook={orderBook} wallet={wallet} orderType={OrderType.Buy} />
             <Hidden mdDown><Grid item xs={3} /></Hidden>
         </>}
         <OrderStocks orderBook={orderBook} />
     </Grid>
 }
 
-export function SellOrderForm(
+export function OrderForm(
     {
         orderBook,
-        wallet
+        wallet,
+        orderType
     }: {
         orderBook: OrderBookClient,
-        wallet: Wallet
+        wallet: Wallet,
+        orderType: OrderType
     }
 ) {
     const [stableToken] = usePromise(() => orderBook.getStableToken(), [orderBook]);
-    const [currency] = usePromise(async () => await stableToken?.getCurrency(), [stableToken]);
-    const [volume, setVolume] = useState<BigNumber>();
+    const [stableCurrency] = usePromise(async () => await stableToken?.getCurrency(), [stableToken]);
+    const [amount, setAmount] = useState<BigNumber>();
     const [price, setPrice] = useState<BigNumber>();
 
-    let volumeErrorMessage: string | undefined;
+    let amountErrorMessage: string | undefined;
     let priceErrorMessage: string | undefined;
 
     let hasError = false;
 
-    if (volume !== undefined) {
-        if (volume.lte(0)) {
-            volumeErrorMessage = 'must be > 0'
+    if (amount !== undefined) {
+        if (amount.lte(0)) {
+            amountErrorMessage = 'must be > 0'
             hasError = true;
         }
     }
@@ -119,10 +121,12 @@ export function SellOrderForm(
         }
     }
 
-    const valid = !hasError && !!volume && !!price;
+    const valid = !hasError && !!amount && !!price;
     const [sending, setSending] = useState(false);
     const [transactions, error] = useObservable(
-        () => orderBook.watchSellTransactions(wallet.getSigner()),
+        () => orderBook[
+            orderType === OrderType.Sell ? "watchSellTransactions" : "watchBuyTransactions"
+        ](wallet.getSigner()),
         [orderBook, wallet]
     )
     const pending = transactions?.filter(tx => tx.state === TransactionState.Pending)?.length ?? 0
@@ -130,7 +134,9 @@ export function SellOrderForm(
     const putOrder = async () => {
         setSending(true);
         try {
-            const tx = await orderBook.putSellOrder(wallet.getSigner(), volume!, price!);
+            const tx = await orderBook[
+                orderType === OrderType.Sell ? "putSellOrder" : "putBuyOrder"
+            ](wallet.getSigner(), amount!, price!);
             console.log(tx);
         } catch (e) {
             console.error(e);
@@ -140,97 +146,21 @@ export function SellOrderForm(
     }
 
     return <Grid item sm={6} lg={3}>{
-        currency && <Card>
+        stableCurrency && <Card>
             <CardContent>
-                <AmountInput currency={orderBook.baseClient.currency}
-                             onChange={setVolume}
-                             textFieldProps={{label: "Volume"}}
-                             errorMessage={volumeErrorMessage}/>
+                <AmountInput currency={orderType === OrderType.Sell ? orderBook.baseClient.currency : stableCurrency}
+                             onChange={setAmount}
+                             textFieldProps={{label: orderType === OrderType.Sell ? "Volume" : "Balance"}}
+                             errorMessage={amountErrorMessage}/>
                 <br/>
-                <AmountInput currency={currency}
+                <AmountInput currency={stableCurrency}
                              onChange={setPrice}
                              textFieldProps={{label: "Price"}}
                              errorMessage={priceErrorMessage}/>
             </CardContent>
             <CardActions>
                 <Button disabled={!valid || sending} onClick={() => putOrder()}>
-                    Sell
-                    {pending > 0 && <CircularProgressWithLabel label={pending} />}
-                </Button>
-            </CardActions>
-        </Card>
-    }</Grid>
-}
-
-export function BuyOrderForm(
-    {
-        orderBook,
-        wallet
-    }: {
-        orderBook: OrderBookClient,
-        wallet: Wallet
-    }
-) {
-    const [stableToken] = usePromise(() => orderBook.getStableToken(), [orderBook]);
-    const [currency] = usePromise(async () => await stableToken?.getCurrency(), [stableToken]);
-    const [balance, setBalance] = useState<BigNumber>();
-    const [price, setPrice] = useState<BigNumber>();
-
-    let balanceErrorMessage: string | undefined;
-    let priceErrorMessage: string | undefined;
-
-    let hasError = false;
-
-    if (balance !== undefined) {
-        if (balance.lte(0)) {
-            balanceErrorMessage = 'must be > 0'
-            hasError = true;
-        }
-    }
-
-    if (price !== undefined) {
-        if (price.lte(0)) {
-            priceErrorMessage = 'must be > 0'
-            hasError = true;
-        }
-    }
-
-    const valid = !hasError && !!balance && !!price;
-    const [sending, setSending] = useState(false);
-    const [transactions, error] = useObservable(
-        () => orderBook.watchBuyTransactions(wallet.getSigner()),
-        [orderBook, wallet]
-    )
-    const pending = transactions?.filter(tx => tx.state === TransactionState.Pending)?.length ?? 0
-
-    const putOrder = async () => {
-        setSending(true);
-        try {
-            const tx = await orderBook.putBuyOrder(wallet.getSigner(), balance!, price!);
-            console.log(tx);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setSending(false);
-        }
-    }
-
-    return <Grid item sm={6} lg={3}>{
-        currency && <Card>
-            <CardContent>
-                <AmountInput currency={currency}
-                             onChange={setBalance}
-                             textFieldProps={{label: "Balance"}}
-                             errorMessage={balanceErrorMessage}/>
-                <br/>
-                <AmountInput currency={currency}
-                             onChange={setPrice}
-                             textFieldProps={{label: "Price"}}
-                             errorMessage={priceErrorMessage}/>
-            </CardContent>
-            <CardActions>
-                <Button disabled={!valid || sending} onClick={() => putOrder()}>
-                    Buy
+                    {orderType === OrderType.Sell ? "Sell" : "Buy"}
                     {pending > 0 && <CircularProgressWithLabel label={pending} />}
                 </Button>
             </CardActions>
