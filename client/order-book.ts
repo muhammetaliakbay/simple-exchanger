@@ -2,8 +2,8 @@ import {BaseClient} from "./base-client";
 import {OrderBookDefinition} from "../instances/definitions";
 import {OrderAdd, OrderBook, OrderType, OrderUpdate, Stats, UpdateType} from "../contracts/order-book";
 import {StableTokenClient} from "./stable-token";
-import {defer, Observable} from "rxjs";
-import {share, switchMap} from "rxjs/operators";
+import {defer, Observable, of} from "rxjs";
+import {concatMap, map, share, shareReplay, switchMap} from "rxjs/operators";
 import {OrderEntryWithId} from "../contracts/order";
 import {Event, Signer, BigNumber, BigNumberish} from "ethers"
 import {TransactionResponse} from "@ethersproject/abstract-provider";
@@ -192,5 +192,15 @@ export class OrderBookClient {
         )
     ).pipe(
         share()
+    )
+
+    readonly bestPrices$: Observable<{seller: BigNumber | undefined, buyer: BigNumber | undefined}> = this.orders$.pipe(
+        map(
+            (orders) => ({
+                seller: orders.sellers[0]?.entry?.price,
+                buyer: orders.buyers[0]?.entry?.price
+            })
+        ),
+        shareReplay(1)
     )
 }
