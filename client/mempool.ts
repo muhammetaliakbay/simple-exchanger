@@ -211,8 +211,12 @@ export class MemPool {
             id,
             provider,
 
-            localStorageSource,
-            broadcastChannelSource,
+            ...(
+                typeof window === 'undefined' ? [] : [
+                    localStorageSource,
+                    broadcastChannelSource,
+                ]
+            ),
             providerSource(provider)
         );
     }
