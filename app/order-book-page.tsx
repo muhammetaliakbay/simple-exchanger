@@ -7,7 +7,8 @@ import {
     Button,
     Card,
     CardActions,
-    CardContent, Divider,
+    CardContent,
+    Divider,
     Grid,
     Hidden,
     Paper,
@@ -16,7 +17,8 @@ import {
     TableCell,
     TableContainer,
     TableHead,
-    TableRow, Typography
+    TableRow,
+    Typography, useTheme
 } from "@material-ui/core";
 import {AmountInput} from "./amount-input";
 import {BigNumber} from "ethers";
@@ -102,6 +104,12 @@ export function OrderForm(
     const [amount, setAmount] = useState<BigNumber>();
     const [price, setPrice] = useState<BigNumber>();
 
+    const [bestPrices] = useObservable(
+        () => orderBook.bestPrices$,
+        [orderBook]
+    )
+    const bestPrice = orderType === OrderType.Buy ? bestPrices?.seller : bestPrices?.buyer;
+
     const [stableBalance] = useObservable(
         () => stableToken?.getBalance(wallet.getAddress()) ?? of(undefined),
         [stableToken, wallet]
@@ -154,6 +162,8 @@ export function OrderForm(
         }
     }
 
+    const theme = useTheme()
+
     return <Grid item sm={6} lg={3}>{
         stableCurrency && <Card>
             <CardContent>
@@ -172,12 +182,21 @@ export function OrderForm(
             <CardContent>
                 <AmountInput currency={orderType === OrderType.Sell ? orderBook.baseClient.currency : stableCurrency}
                              onChange={setAmount}
-                             textFieldProps={{label: orderType === OrderType.Sell ? "Volume" : "Balance"}}
+                             textFieldProps={{
+                                 label: orderType === OrderType.Sell ? "Volume" : "Balance",
+                                 fullWidth: true,
+                                 style: {
+                                     marginBottom: theme.spacing(1)
+                                 }
+                             }}
                              errorMessage={amountErrorMessage}/>
-                <br/>
                 <AmountInput currency={stableCurrency}
                              onChange={setPrice}
-                             textFieldProps={{label: "Price"}}
+                             defaultAmount={bestPrice}
+                             textFieldProps={{
+                                 label: "Price",
+                                 fullWidth: true
+                             }}
                              errorMessage={priceErrorMessage}/>
             </CardContent>
             <Divider/>
