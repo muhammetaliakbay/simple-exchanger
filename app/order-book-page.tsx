@@ -7,7 +7,7 @@ import {
     Button,
     Card,
     CardActions,
-    CardContent,
+    CardContent, Divider,
     Grid,
     Hidden,
     Paper,
@@ -16,7 +16,7 @@ import {
     TableCell,
     TableContainer,
     TableHead,
-    TableRow
+    TableRow, Typography
 } from "@material-ui/core";
 import {AmountInput} from "./amount-input";
 import {BigNumber} from "ethers";
@@ -102,6 +102,15 @@ export function OrderForm(
     const [amount, setAmount] = useState<BigNumber>();
     const [price, setPrice] = useState<BigNumber>();
 
+    const [stableBalance] = useObservable(
+        () => stableToken?.getBalance(wallet.getAddress()) ?? of(undefined),
+        [stableToken, wallet]
+    )
+    const [cryptoBalance] = useObservable(
+        () => orderBook.baseClient.getBalance(wallet.getAddress()),
+        [wallet]
+    )
+
     let amountErrorMessage: string | undefined;
     let priceErrorMessage: string | undefined;
 
@@ -148,6 +157,19 @@ export function OrderForm(
     return <Grid item sm={6} lg={3}>{
         stableCurrency && <Card>
             <CardContent>
+                {orderType === OrderType.Buy && <Typography>
+                    {stableBalance && <AmountView amount={stableBalance.available} currency={stableCurrency} />}
+                    {stableBalance?.locked.gt(0) && <>
+                        &nbsp;
+                        (<AmountView amount={stableBalance?.locked} currency={stableCurrency} /> Locked)
+                    </>}
+                </Typography>}
+                {orderType === OrderType.Sell && <Typography>
+                    {cryptoBalance && <AmountView amount={cryptoBalance} currency={orderBook.baseClient.currency} />}
+                </Typography>}
+            </CardContent>
+            <Divider />
+            <CardContent>
                 <AmountInput currency={orderType === OrderType.Sell ? orderBook.baseClient.currency : stableCurrency}
                              onChange={setAmount}
                              textFieldProps={{label: orderType === OrderType.Sell ? "Volume" : "Balance"}}
@@ -158,6 +180,7 @@ export function OrderForm(
                              textFieldProps={{label: "Price"}}
                              errorMessage={priceErrorMessage}/>
             </CardContent>
+            <Divider/>
             <CardActions>
                 <Button disabled={!valid || sending} onClick={() => putOrder()}>
                     {orderType === OrderType.Sell ? "Sell" : "Buy"}
