@@ -3,10 +3,11 @@ import {OrderBookDefinition} from "../instances/definitions";
 import {OrderAdd, OrderBook, OrderType, OrderUpdate, Stats, UpdateType} from "../contracts/order-book";
 import {StableTokenClient} from "./stable-token";
 import {defer, Observable} from "rxjs";
-import {share} from "rxjs/operators";
+import {share, switchMap} from "rxjs/operators";
 import {OrderEntryWithId} from "../contracts/order";
 import {Event, Signer, BigNumber, BigNumberish} from "ethers"
 import {TransactionResponse} from "@ethersproject/abstract-provider";
+import {StoredTransaction} from "./mempool";
 
 export interface Orders {
     sellers: OrderEntryWithId[],
@@ -47,24 +48,61 @@ export class OrderBookClient {
 
     async putSellOrder(signer: Signer, volume: BigNumberish, price: BigNumberish): Promise<TransactionResponse> {
         const signerContract = this.contract.connect(signer);
-        return await signerContract.putSellOrder(price, {
-            value: volume
-        })
+        return this.baseClient.memPool.putResponse(
+            await signerContract.putSellOrder(price, {
+                value: volume
+            })
+        )
     }
 
     async putBuyOrder(signer: Signer, balance: BigNumberish, price: BigNumberish): Promise<TransactionResponse> {
         const signerContract = this.contract.connect(signer);
-        return await signerContract.putBuyOrder(balance, price)
+        return this.baseClient.memPool.putResponse(
+            await signerContract.putBuyOrder(balance, price)
+        )
     }
 
     async cancelBuyOrder(signer: Signer, id: BigNumberish): Promise<TransactionResponse> {
         const signerContract = this.contract.connect(signer);
-        return await signerContract.cancelBuyOrder(id)
+        return this.baseClient.memPool.putResponse(
+            await signerContract.cancelBuyOrder(id)
+        )
     }
 
     async cancelSellOrder(signer: Signer, id: BigNumberish): Promise<TransactionResponse> {
         const signerContract = this.contract.connect(signer);
-        return await signerContract.cancelSellOrder(id)
+        return this.baseClient.memPool.putResponse(
+            await signerContract.cancelSellOrder(id)
+        )
+    }
+
+    private watchTransactions(signer: Signer, methodName: string): Observable<StoredTransaction[]> {
+        return defer(() => signer.getAddress()).pipe(
+            switchMap(
+                address => this.baseClient.memPool.watch(
+                    (tx) => (
+                        tx.from === address &&
+                        tx.to === this.contract.address &&
+                        this.contract.interface.parseTransaction(
+                            tx
+                        ).name === methodName
+                    )
+                )
+            )
+        )
+    }
+
+    watchSellTransactions(signer: Signer): Observable<StoredTransaction[]> {
+        return this.watchTransactions(signer, 'putSellOrder')
+    }
+    watchBuyTransactions(signer: Signer): Observable<StoredTransaction[]> {
+        return this.watchTransactions(signer, 'putBuyOrder')
+    }
+    watchCancelSellTransactions(signer: Signer): Observable<StoredTransaction[]> {
+        return this.watchTransactions(signer, 'cancelSellOrder')
+    }
+    watchCancelBuyTransactions(signer: Signer): Observable<StoredTransaction[]> {
+        return this.watchTransactions(signer, 'cancelBuyOrder')
     }
 
     readonly stats$: Observable<Stats> = defer(
