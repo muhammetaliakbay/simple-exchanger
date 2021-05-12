@@ -18,6 +18,7 @@ import {ExchangerClient} from "./exchanger";
 import {OrderBookClient} from "./order-book";
 import {Currency} from "./currency";
 import {exhaustMapWithTrailing} from "./reactive-util";
+import {MemPool} from "./mempool";
 
 function sortEventsAndRemoveDuplicates(events: Event[]): Event[] {
     const sorted = events.sort(
@@ -46,6 +47,8 @@ export class BaseClient {
         readonly currency: Currency
     ) {
     }
+
+    readonly memPool: MemPool = MemPool.start(0, this.provider)
 
     readonly blockNumber$: Observable<number> = merge(
         defer(
