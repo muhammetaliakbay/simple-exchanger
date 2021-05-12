@@ -25,6 +25,9 @@ import {OrderType} from "../contracts/order-book";
 import {useWallet} from "./wallet-provider";
 import {Wallet} from "../client/wallet";
 import {ExchangerClient} from "../client/exchanger";
+import {TransactionState} from "../client/mempool";
+import {CircularProgressWithLabel} from "./circular-progress";
+import {of} from "rxjs";
 
 export function OrderBookPage(
     {
@@ -111,6 +114,11 @@ export function SellOrderForm(
 
     const valid = !hasError && !!volume && !!price;
     const [sending, setSending] = useState(false);
+    const [transactions, error] = useObservable(
+        () => orderBook.watchSellTransactions(wallet.getSigner()),
+        [orderBook, wallet]
+    )
+    const pending = transactions?.filter(tx => tx.state === TransactionState.Pending)?.length ?? 0
 
     const putOrder = async () => {
         setSending(true);
@@ -138,7 +146,10 @@ export function SellOrderForm(
                              errorMessage={priceErrorMessage}/>
             </CardContent>
             <CardActions>
-                <Button disabled={!valid && !sending} onClick={() => putOrder()}>Sell</Button>
+                <Button disabled={!valid || sending} onClick={() => putOrder()}>
+                    Sell
+                    {pending > 0 && <CircularProgressWithLabel label={pending} />}
+                </Button>
             </CardActions>
         </Card>
     }</>
@@ -179,6 +190,11 @@ export function BuyOrderForm(
 
     const valid = !hasError && !!balance && !!price;
     const [sending, setSending] = useState(false);
+    const [transactions, error] = useObservable(
+        () => orderBook.watchBuyTransactions(wallet.getSigner()),
+        [orderBook, wallet]
+    )
+    const pending = transactions?.filter(tx => tx.state === TransactionState.Pending)?.length ?? 0
 
     const putOrder = async () => {
         setSending(true);
@@ -206,7 +222,10 @@ export function BuyOrderForm(
                              errorMessage={priceErrorMessage}/>
             </CardContent>
             <CardActions>
-                <Button disabled={!valid && !sending} onClick={() => putOrder()}>Buy</Button>
+                <Button disabled={!valid || sending} onClick={() => putOrder()}>
+                    Buy
+                    {pending > 0 && <CircularProgressWithLabel label={pending} />}
+                </Button>
             </CardActions>
         </Card>
     }</>
@@ -261,6 +280,14 @@ function OrderTable(
         wallet?: Wallet
     }
 ) {
+    const [cancelsTransactions, error] = useObservable(
+        () => wallet == undefined ? of(undefined) : orderBook[
+                orderType === OrderType.Buy ? "watchCancelBuyTransactions" : "watchCancelSellTransactions"
+            ](wallet.getSigner()),
+        [orderBook, wallet]
+    )
+    const pendingCancelTransactions = cancelsTransactions?.filter(tx => tx.state === TransactionState.Pending)?.length
+
     return <TableContainer component={Paper}>
         <Table>
             <TableHead>
@@ -277,6 +304,7 @@ function OrderTable(
                         order => <OrderRow key={order.id.toNumber()}
                                            orderBook={orderBook}
                                            wallet={wallet}
+                                           pendingCancels={pendingCancelTransactions}
                                            order={order}
                                            orderType={orderType}
                                            stableTokenCurrency={stableTokenCurrency}
@@ -295,14 +323,16 @@ function OrderRow(
         currency,
         stableTokenCurrency,
         orderType,
-        wallet
+        wallet,
+        pendingCancels
     }: {
         orderBook: OrderBookClient,
         order: OrderEntryWithId,
         currency: Currency,
         stableTokenCurrency: Currency,
         orderType: OrderType,
-        wallet?: Wallet
+        wallet?: Wallet,
+        pendingCancels?: number
     }
 ) {
     const owned = wallet?.getAddress() === order.entry.account;
@@ -332,7 +362,10 @@ function OrderRow(
         </TableCell>
         <TableCell><AmountView amount={order.entry.price} currency={stableTokenCurrency}/></TableCell>
         <TableCell>
-            {owned && <Button disabled={cancelling} onClick={() => cancelOrder()}>Cancel Order</Button>}
+            {owned && <Button disabled={cancelling} onClick={() => cancelOrder()}>
+                Cancel Order
+                {pendingCancels != undefined && pendingCancels > 0 && <CircularProgressWithLabel label={pendingCancels} />}
+            </Button>}
         </TableCell>
     </TableRow>
 }
