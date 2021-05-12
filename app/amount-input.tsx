@@ -1,7 +1,7 @@
 import {InputAdornment, TextField} from "@material-ui/core";
 import {BigNumber} from "ethers";
 import React, {useEffect, useState} from "react";
-import {fromFixedPointString, InvalidFixedPointExpression, PrecisionOverflow} from "./amount-utils";
+import {fromFixedPointString, InvalidFixedPointExpression, PrecisionOverflow, toFixedPointString} from "./amount-utils";
 import {Currency} from "../client/currency";
 import {TextFieldProps} from "@material-ui/core";
 
@@ -10,10 +10,12 @@ export function AmountInput(
         currency,
         onChange,
         errorMessage,
-        textFieldProps
+        textFieldProps,
+        defaultAmount
     }: {
         currency: Currency,
         onChange: (amount: BigNumber | undefined) => void,
+        defaultAmount?: BigNumber
         errorMessage?: any,
         textFieldProps?: TextFieldProps
     }
@@ -25,7 +27,7 @@ export function AmountInput(
         () => {
             if (text.length == 0) {
                 setInternalErrorMessage(undefined);
-                onChange(undefined)
+                onChange(defaultAmount)
             } else {
                 let integer: BigNumber | undefined;
                 try {
@@ -44,12 +46,13 @@ export function AmountInput(
                     onChange(integer);
                 }
             }
-        }, [text]
+        }, [text, defaultAmount]
     )
 
     return <TextField InputProps={{
                             startAdornment: <InputAdornment position="start">{currency.code}</InputAdornment>,
                       }}
+                      placeholder={defaultAmount && toFixedPointString(defaultAmount, currency.precision)}
                       value={text}
                       onChange={e => setText(e.target.value)}
                       error={!!(errorMessage ?? internalErrorMessage)}
