@@ -60,12 +60,16 @@ function AccountRow(
         <TableCell>{balance && currency && toFixedPointString(balance.locked, currency.precision)}</TableCell>
         <TableCell>{balance && currency && toFixedPointString(balance.available.add(balance.locked), currency.precision)}</TableCell>
         <TableCell>
-            <Link to={`${url}/${token.getContractAddress()}/deposit`}>
-                <Button>Deposit</Button>
-            </Link>
-            <Link to={`${url}/${token.getContractAddress()}/withdraw`}>
-                <Button>Withdraw</Button>
-            </Link>
+            {
+                currency && <>
+                    <Link to={`${url}/${currency.code}/deposit`}>
+                        <Button>Deposit</Button>
+                    </Link>
+                    <Link to={`${url}/${currency.code}/withdraw`}>
+                        <Button>Withdraw</Button>
+                    </Link>
+                </>
+            }
         </TableCell>
     </TableRow>
 }
