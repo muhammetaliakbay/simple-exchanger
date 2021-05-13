@@ -61,15 +61,15 @@ export function OrderBookPage(
     )
 
     return <>
-        {state === 'pending' && <>
-            Resolving order-book...
-        </>}
-        {state === 'rejected' && <>
-            Couldn't resolve exchanger address!
-        </>}
-        {state === 'resolved' && orderBook == null && <>
-            The exchanger doesn't support the currency: {currency}
-        </>}
+        {state === 'pending' && <Box m={4}>
+            <Typography>Resolving order-book...</Typography>
+        </Box>}
+        {state === 'rejected' && <Box m={4}>
+            <Typography>Couldn't resolve exchanger address!</Typography>
+        </Box>}
+        {state === 'resolved' && orderBook == null && <Box m={4}>
+            <Typography>The exchanger doesn't support the currency: <b>{currency}</b></Typography>
+        </Box>}
 
         {state === 'resolved' && orderBook && <OrderBookView orderBook={orderBook} />}
     </>
