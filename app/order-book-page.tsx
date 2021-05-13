@@ -1,7 +1,5 @@
 import React, {useState} from "react";
 import {useParams,} from "react-router-dom";
-import {useObservable} from "react-use-observable";
-import usePromise from "react-use-promise";
 import {OrderBookClient} from "../client/order-book";
 import {
     Button,
@@ -32,6 +30,7 @@ import {ExchangerClient} from "../client/exchanger";
 import {TransactionState} from "../client/mempool";
 import {CircularProgressWithLabel} from "./circular-progress";
 import {of} from "rxjs";
+import {useLoggedObservable, useLoggedPromise} from "./logger-hooks";
 
 export function OrderBookPage(
     {
@@ -42,7 +41,7 @@ export function OrderBookPage(
 ) {
     let {currency} = useParams() as {currency: string}
 
-    const [orderBook, , state] = usePromise(
+    const [orderBook, , state] = useLoggedPromise(
         async () => {
             const stableToken = await exchanger.getStableToken(currency);
             if (stableToken == null) {
@@ -99,22 +98,22 @@ export function OrderForm(
         orderType: OrderType
     }
 ) {
-    const [stableToken] = usePromise(() => orderBook.getStableToken(), [orderBook]);
-    const [stableCurrency] = usePromise(async () => await stableToken?.getCurrency(), [stableToken]);
+    const [stableToken] = useLoggedPromise(() => orderBook.getStableToken(), [orderBook]);
+    const [stableCurrency] = useLoggedPromise(async () => await stableToken?.getCurrency(), [stableToken]);
     const [amount, setAmount] = useState<BigNumber>();
     const [price, setPrice] = useState<BigNumber>();
 
-    const [bestPrices] = useObservable(
+    const [bestPrices] = useLoggedObservable(
         () => orderBook.bestPrices$,
         [orderBook]
     )
     const bestPrice = orderType === OrderType.Buy ? bestPrices?.seller : bestPrices?.buyer;
 
-    const [stableBalance] = useObservable(
+    const [stableBalance] = useLoggedObservable(
         () => stableToken?.getBalance(wallet.getAddress()) ?? of(undefined),
         [stableToken, wallet]
     )
-    const [cryptoBalance] = useObservable(
+    const [cryptoBalance] = useLoggedObservable(
         () => orderBook.baseClient.getBalance(wallet.getAddress()),
         [wallet]
     )
@@ -140,7 +139,7 @@ export function OrderForm(
 
     const valid = !hasError && !!amount && !!price;
     const [sending, setSending] = useState(false);
-    const [transactions, error] = useObservable(
+    const [transactions] = useLoggedObservable(
         () => orderBook[
             orderType === OrderType.Sell ? "watchSellTransactions" : "watchBuyTransactions"
         ](wallet.getSigner()),
@@ -217,10 +216,10 @@ export function OrderStocks(
         orderBook: OrderBookClient
     }
 ) {
-    const [stableToken] = usePromise(() => orderBook.getStableToken(), [orderBook]);
-    const [stableTokenCurrency] = usePromise(async () => await stableToken?.getCurrency(), [stableToken]);
+    const [stableToken] = useLoggedPromise(() => orderBook.getStableToken(), [orderBook]);
+    const [stableTokenCurrency] = useLoggedPromise(async () => await stableToken?.getCurrency(), [stableToken]);
 
-    const [orders] = useObservable(() => orderBook.orders$, [orderBook]);
+    const [orders] = useLoggedObservable(() => orderBook.orders$, [orderBook]);
 
     const wallet = useWallet();
 
@@ -263,7 +262,7 @@ function OrderTable(
         wallet?: Wallet
     }
 ) {
-    const [cancelsTransactions, error] = useObservable(
+    const [cancelsTransactions] = useLoggedObservable(
         () => wallet == undefined ? of(undefined) : orderBook[
             orderType === OrderType.Buy ? "watchCancelBuyTransactions" : "watchCancelSellTransactions"
             ](wallet.getSigner()),

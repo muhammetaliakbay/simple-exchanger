@@ -2,10 +2,9 @@ import {Wallet} from "../client/wallet";
 import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@material-ui/core";
 import React from "react";
 import {StableTokenAccount, StableTokenClient} from "../client/stable-token";
-import usePromise from "react-use-promise";
-import {useObservable} from "react-use-observable";
 import {Link, useRouteMatch} from "react-router-dom";
 import {toFixedPointString} from "./amount-utils";
+import {useLoggedObservable, useLoggedPromise} from "./logger-hooks";
 
 export function WalletOverview(
     {
@@ -51,8 +50,8 @@ function AccountRow(
     const {url} = useRouteMatch();
 
     const token = account.client;
-    const [currency] = usePromise(() => token.getCurrency(), [token])
-    const [balance] = useObservable(() => account.balance$, [account])
+    const [currency] = useLoggedPromise(() => token.getCurrency(), [token])
+    const [balance] = useLoggedObservable(() => account.balance$, [account])
 
     return <TableRow>
         <TableCell>{currency?.code}</TableCell>

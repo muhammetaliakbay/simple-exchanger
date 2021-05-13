@@ -1,6 +1,6 @@
 import {StableTokenClient} from "../client/stable-token";
-import usePromise from "react-use-promise";
 import React from "react";
+import {useLoggedPromise} from "./logger-hooks";
 
 export function StableTokenName(
     {
@@ -9,6 +9,6 @@ export function StableTokenName(
         token: StableTokenClient
     }
 ) {
-    const [currency] = usePromise(() => token.getCurrency(), [token])
+    const [currency] = useLoggedPromise(() => token.getCurrency(), [token])
     return <>{currency?.code}</>
 }

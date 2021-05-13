@@ -14,7 +14,6 @@ import {ethers} from "ethers";
 import {ExchangerPage} from "./exchanger-page";
 import {Wallet} from "../client/wallet";
 import {WalletProvider} from "./wallet-provider";
-import usePromise from "react-use-promise";
 import detectEthereumProvider from "@metamask/detect-provider";
 import {
     AppBar,
@@ -34,12 +33,13 @@ import {Currency} from "../client/currency";
 import ETH from "../eth.json";
 import {ArrowBack} from "@material-ui/icons"
 import {amber, blue, pink} from "@material-ui/core/colors";
+import {useLoggedPromise} from "./logger-hooks";
 
 export function App() {
     const [providerTry, setProviderTry] = useState(0);
     const [accessTry, setAccessTry] = useState(0);
-    const [provider, , providerState] = usePromise(() => detectEthereumProvider(), [providerTry]);
-    const [ , , accessState] = usePromise(
+    const [provider, , providerState] = useLoggedPromise(() => detectEthereumProvider(), [providerTry]);
+    const [ , , accessState] = useLoggedPromise(
         async () => (provider != null) && (provider as any).request({ method: 'eth_requestAccounts' }),
         [provider, accessTry]
     );
@@ -92,7 +92,7 @@ export function WithProvider(
     }
 ) {
     const currency: Currency = ETH;
-    const [addresses] = usePromise(
+    const [addresses] = useLoggedPromise(
         () => provider.listAccounts(),
         [provider]
     )

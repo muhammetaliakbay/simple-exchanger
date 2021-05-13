@@ -5,8 +5,6 @@ import {
     useParams, useRouteMatch
 } from "react-router-dom";
 import {useBaseClient} from "./base-client-provider";
-import {useObservable} from "react-use-observable";
-import usePromise from "react-use-promise";
 import {ExchangerClient} from "../client/exchanger";
 import {Button, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@material-ui/core";
 import {OrderBookClient} from "../client/order-book";
@@ -16,13 +14,14 @@ import {WalletOverview} from "./wallet-overview";
 import {AmountView} from "./amount-view";
 import {ethers} from "ethers";
 import {OrderBookPage} from "./order-book-page";
+import {useLoggedObservable, useLoggedPromise} from "./logger-hooks";
 
 export function ExchangerPage() {
     let {exchangerAddress} = useParams() as {exchangerAddress: string}
 
     const baseClient = useBaseClient();
 
-    const [resolvedAddress, , state] = usePromise(
+    const [resolvedAddress, , state] = useLoggedPromise(
         async () => {
             if (ethers.utils.isAddress(exchangerAddress)) {
                 return exchangerAddress
@@ -65,8 +64,8 @@ export function ExchangerView(
         exchanger: ExchangerClient
     }
 ) {
-    const [tokens] = usePromise(() => exchanger.getStableTokens(), [exchanger])
-    const [orderBooks] = usePromise(() => exchanger.getOrderBooks(), [exchanger])
+    const [tokens] = useLoggedPromise(() => exchanger.getStableTokens(), [exchanger])
+    const [orderBooks] = useLoggedPromise(() => exchanger.getOrderBooks(), [exchanger])
     const wallet = useWallet();
 
     const showWallet = wallet && tokens;
@@ -104,10 +103,10 @@ export function OrderBookRow(
         orderBook: OrderBookClient
     }
 ) {
-    const [stableToken] = usePromise(() => orderBook.getStableToken(), [orderBook])
-    const [stats] = useObservable(() => orderBook.stats$, [orderBook])
+    const [stableToken] = useLoggedPromise(() => orderBook.getStableToken(), [orderBook])
+    const [stats] = useLoggedObservable(() => orderBook.stats$, [orderBook])
     const currency = orderBook.baseClient.currency;
-    const [stableCurrency] = usePromise(async () => await stableToken?.getCurrency(), [stableToken])
+    const [stableCurrency] = useLoggedPromise(async () => await stableToken?.getCurrency(), [stableToken])
 
     const {url} = useRouteMatch();
 
