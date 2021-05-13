@@ -11,11 +11,13 @@ export function AmountInput(
         onChange,
         errorMessage,
         textFieldProps,
-        defaultAmount
+        defaultAmount,
+        placeHolderAmount
     }: {
         currency: Currency,
         onChange: (amount: BigNumber | undefined) => void,
         defaultAmount?: BigNumber
+        placeHolderAmount?: BigNumber
         errorMessage?: any,
         textFieldProps?: TextFieldProps
     }
@@ -46,13 +48,16 @@ export function AmountInput(
                     onChange(integer);
                 }
             }
-        }, [text, defaultAmount]
+        }, [text, defaultAmount?.toBigInt()]
     )
 
     return <TextField InputProps={{
                             startAdornment: <InputAdornment position="start">{currency.code}</InputAdornment>,
                       }}
-                      placeholder={defaultAmount && toFixedPointString(defaultAmount, currency.precision)}
+                      placeholder={
+                          (defaultAmount && toFixedPointString(defaultAmount, currency.precision)) ??
+                          (placeHolderAmount && toFixedPointString(placeHolderAmount, currency.precision))
+                      }
                       value={text}
                       onChange={e => setText(e.target.value)}
                       error={!!(errorMessage ?? internalErrorMessage)}
