@@ -53,14 +53,14 @@ export function App() {
                 {!!provider && <>
                     {
                         accessState === 'pending' && <Box m={4}>
-                            Accessing Ethereum...
+                            <Typography>Accessing Ethereum...</Typography>
                             <Divider />
-                            (You may need to allow in your provider.)
+                            <Typography>(You may need to allow in your provider.)</Typography>
                         </Box>
                     }
                     {
                         accessState === 'rejected' && <Box m={4}>
-                            Rejected Ethereum access!
+                            <Typography>Rejected Ethereum access!</Typography>
                             <Divider />
                             <Button onClick={() => setAccessTry(accessTry + 1)}>Try again</Button>
                         </Box>
@@ -70,8 +70,9 @@ export function App() {
                     }
                 </>}
                 {!!provider || <Box m={4}>
-                    No Ethereum provider found. <br />
-                    Install one, Metamask is suggested.
+                    <Typography>No Ethereum provider found.</Typography>
+                    <br />
+                    <Typography>Install one, Metamask is suggested.</Typography>
                     <Divider />
                     <Button onClick={() => setProviderTry(providerTry + 1)}>Try again</Button>
                 </Box>}

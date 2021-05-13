@@ -16,7 +16,7 @@ import {
     TableCell,
     TableContainer,
     TableHead,
-    TableRow
+    TableRow, Typography
 } from "@material-ui/core";
 import {OrderBookClient} from "../client/order-book";
 import {StableTokenName} from "./stable-token";
@@ -47,15 +47,15 @@ export function ExchangerPage() {
     const {path} = useRouteMatch();
 
     return <>
-        {state === 'pending' && <>
-            Resolving exchanger address...
-        </>}
-        {state === 'rejected' && <>
-            Couldn't resolve exchanger address!
-        </>}
-        {state === 'resolved' && resolvedAddress == null && <>
-            Address is not found
-        </>}
+        {state === 'pending' && <Box m={4}>
+            <Typography>Resolving exchanger address...</Typography>
+        </Box>}
+        {state === 'rejected' && <Box m={4}>
+            <Typography>Couldn't resolve exchanger address!</Typography>
+        </Box>}
+        {state === 'resolved' && resolvedAddress == null && <Box m={4}>
+            <Typography>Address is not found</Typography>
+        </Box>}
 
         {state === 'resolved' && exchanger && <Switch>
             <Route exact path={`${path}`}>
