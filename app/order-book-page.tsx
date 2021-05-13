@@ -2,6 +2,8 @@ import React, {useState} from "react";
 import {useParams,} from "react-router-dom";
 import {OrderBookClient} from "../client/order-book";
 import {
+    AppBar,
+    Box,
     Button,
     Card,
     CardActions,
@@ -10,13 +12,20 @@ import {
     Grid,
     Hidden,
     Paper,
+    Tab,
     Table,
     TableBody,
     TableCell,
     TableContainer,
     TableHead,
     TableRow,
-    Typography, useTheme
+    Tabs,
+    Theme,
+    Toolbar,
+    Typography,
+    useMediaQuery,
+    useTheme,
+    Zoom
 } from "@material-ui/core";
 import {AmountInput} from "./amount-input";
 import {BigNumber} from "ethers";
@@ -75,16 +84,68 @@ export function OrderBookView(
 ) {
     const wallet = useWallet();
 
-    return <Grid container spacing={3}>
-        {wallet && <>
-            <Hidden mdDown><Grid item xs={3} /></Hidden>
-            <OrderForm orderBook={orderBook} wallet={wallet} orderType={OrderType.Sell} />
+    const [tab, setTab] = useState<OrderType>(OrderType.Buy)
 
-            <OrderForm orderBook={orderBook} wallet={wallet} orderType={OrderType.Buy} />
-            <Hidden mdDown><Grid item xs={3} /></Hidden>
-        </>}
-        <OrderStocks orderBook={orderBook} />
-    </Grid>
+    const sm = useMediaQuery<Theme>(theme => theme.breakpoints.down('sm'));
+
+    return <>
+        {sm && <AppBar position="sticky" color="inherit">
+            <Toolbar variant="dense">
+                <Tabs
+                    style={{flexGrow: 1}}
+                    value={tab}
+                    onChange={(e, selectedTab) => setTab(selectedTab)}
+                    indicatorColor="primary"
+                    textColor="primary"
+                    centered >
+                    <Tab label="Sell" value={OrderType.Sell} />
+                    <Tab label="Buy" value={OrderType.Buy} />
+                </Tabs>
+            </Toolbar>
+        </AppBar>}
+        <Box p={4}>
+            <Grid container spacing={3}>
+                <Zoom in={!sm || tab === OrderType.Sell} unmountOnExit timeout={{exit: 0, enter: 350}}>
+                    <Grid item xs={12} md={6}>
+                        <Grid container spacing={3}>
+                            <OrderBookTab orderBook={orderBook} wallet={wallet} orderType={OrderType.Sell} />
+                        </Grid>
+                    </Grid>
+                </Zoom>
+                <Zoom in={!sm || tab === OrderType.Buy} unmountOnExit timeout={{exit: 0, enter: 350}}>
+                    <Grid item xs={12} md={6}>
+                        <Grid container spacing={3}>
+                            <OrderBookTab orderBook={orderBook} wallet={wallet} orderType={OrderType.Buy} />
+                        </Grid>
+                    </Grid>
+                </Zoom>
+            </Grid>
+        </Box>
+    </>
+}
+
+export function OrderBookTab(
+    {
+        orderBook,
+        wallet,
+        orderType
+    }: {
+        orderBook: OrderBookClient,
+        wallet?: Wallet,
+        orderType: OrderType
+    }
+) {
+    return <>
+        {orderType === OrderType.Sell && <Hidden mdDown><Grid item xs={4} /></Hidden>}
+        <Grid item xs={12} lg={8}>
+            {wallet && <OrderForm orderBook={orderBook} wallet={wallet} orderType={orderType} />}
+        </Grid>
+        {orderType === OrderType.Buy && <Hidden mdDown><Grid item xs={4} /></Hidden>}
+
+        <Grid item xs={12}>
+            <OrderStocks orderBook={orderBook} orderType={orderType} />
+        </Grid>
+    </>
 }
 
 export function OrderForm(
@@ -163,7 +224,7 @@ export function OrderForm(
 
     const theme = useTheme()
 
-    return <Grid item sm={6} lg={3}>{
+    return <>{
         stableCurrency && <Card>
             <CardContent>
                 {orderType === OrderType.Buy && <Typography>
@@ -206,14 +267,16 @@ export function OrderForm(
                 </Button>
             </CardActions>
         </Card>
-    }</Grid>
+    }</>
 }
 
 export function OrderStocks(
     {
-        orderBook
+        orderBook,
+        orderType
     }: {
-        orderBook: OrderBookClient
+        orderBook: OrderBookClient,
+        orderType: OrderType
     }
 ) {
     const [stableToken] = useLoggedPromise(() => orderBook.getStableToken(), [orderBook]);
@@ -224,24 +287,13 @@ export function OrderStocks(
     const wallet = useWallet();
 
     return <>{
-        stableTokenCurrency && orders && <>
-            <Grid item sm={6}>
-                <OrderTable orderBook={orderBook}
-                            wallet={wallet}
-                            currency={orderBook.baseClient.currency}
-                            stableTokenCurrency={stableTokenCurrency}
-                            orderType={OrderType.Sell}
-                            orders={orders.sellers}/>
-            </Grid>
-            <Grid item sm={6}>
-                <OrderTable orderBook={orderBook}
-                            wallet={wallet}
-                            currency={orderBook.baseClient.currency}
-                            stableTokenCurrency={stableTokenCurrency}
-                            orderType={OrderType.Buy}
-                            orders={orders.buyers}/>
-            </Grid>
-        </>
+        stableTokenCurrency && orders &&
+        <OrderTable orderBook={orderBook}
+                    wallet={wallet}
+                    currency={orderBook.baseClient.currency}
+                    stableTokenCurrency={stableTokenCurrency}
+                    orderType={orderType}
+                    orders={orderType === OrderType.Sell ? orders.sellers : orders.buyers} />
     }</>
 }
 

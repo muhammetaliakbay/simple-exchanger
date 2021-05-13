@@ -6,7 +6,18 @@ import {
 } from "react-router-dom";
 import {useBaseClient} from "./base-client-provider";
 import {ExchangerClient} from "../client/exchanger";
-import {Button, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@material-ui/core";
+import {
+    Box,
+    Button,
+    Grid,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow
+} from "@material-ui/core";
 import {OrderBookClient} from "../client/order-book";
 import {StableTokenName} from "./stable-token";
 import {useWallet} from "./wallet-provider";
@@ -70,30 +81,32 @@ export function ExchangerView(
 
     const showWallet = wallet && tokens;
 
-    return <Grid container spacing={2}>
-        {showWallet && <Grid item md={12} lg={6}>
-            <WalletOverview wallet={wallet!} tokens={tokens!} />
-        </Grid>}
-        <Grid item md={12} lg={showWallet ? 6 : 12}>
-            <TableContainer component={Paper}>
-                <Table size="small">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Stable token</TableCell>
-                            <TableCell>Sellers Volume</TableCell>
-                            <TableCell>Buyers Balance</TableCell>
-                            <TableCell />
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {orderBooks && orderBooks.map(
-                            orderBook => <OrderBookRow key={orderBook.getContractAddress()} orderBook={orderBook} />
-                        )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+    return <Box p={4}>
+        <Grid container spacing={2}>
+            {showWallet && <Grid item xs={12} lg={6}>
+                <WalletOverview wallet={wallet!} tokens={tokens!} />
+            </Grid>}
+            <Grid item xs={12} lg={showWallet ? 6 : 12}>
+                <TableContainer component={Paper}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Stable token</TableCell>
+                                <TableCell>Sellers Volume</TableCell>
+                                <TableCell>Buyers Balance</TableCell>
+                                <TableCell />
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {orderBooks && orderBooks.map(
+                                orderBook => <OrderBookRow key={orderBook.getContractAddress()} orderBook={orderBook} />
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Grid>
         </Grid>
-    </Grid>
+    </Box>
 }
 
 export function OrderBookRow(
