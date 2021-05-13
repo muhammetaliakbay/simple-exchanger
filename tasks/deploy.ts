@@ -9,26 +9,28 @@ import {promisify} from "util";
 import {writeFile} from "fs";
 import {DeploymentInfo} from "../deployment/deployment-info";
 import {getAddress} from "./task-utils";
+import ETH from "../eth.json"
 
 export default async function() {
+    const stableCurrencyPrecisions = 2;
 
     const queue: Promise<any>[] = [Promise.resolve()];
 
-    console.log("Deploying Order")
+    console.log("Deploying Order library")
     const Order$ = deployOrderLibrary(ethers);
 
-    console.log("Deploying Exchanger")
+    console.log("Deploying Exchanger contract")
     const exchanger$ = deployExchanger(ethers);
 
     for (const currency of stableCurrencies) {
 
-        console.log("Deploying StableToken", currency)
-        const stableToken$ = deployStableToken(ethers, currency, 2);
+        console.log("Deploying StableToken contract", currency)
+        const stableToken$ = deployStableToken(ethers, currency, stableCurrencyPrecisions);
 
         const orderBook$ = Promise.all([stableToken$, Order$]).then(
             ([stableToken, Order]) => {
-                console.log("Deploying OrderBook", currency)
-                return deployOrderBook(ethers, stableToken, 18, {Order})
+                console.log("Deploying OrderBook contract", currency, stableToken.address)
+                return deployOrderBook(ethers, stableToken, ETH.precision, {Order})
             }
         )
 
