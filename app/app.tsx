@@ -1,23 +1,16 @@
 import React, {useMemo, useState} from "react";
-import {
-    HashRouter as Router,
-    Switch,
-    Route,
-    Redirect,
-    useRouteMatch,
-    useHistory
-} from "react-router-dom";
+import {HashRouter as Router, Redirect, Route, Switch, useHistory, useRouteMatch} from "react-router-dom";
 import {BaseClientProvider} from "./base-client-provider";
 import {BaseClient} from "../client/base-client";
 import {ethers} from "ethers";
 import {ExchangerPage} from "./exchanger-page";
 import {Wallet} from "../client/wallet";
 import {WalletProvider} from "./wallet-provider";
-import detectEthereumProvider from "@metamask/detect-provider";
 import {
     AppBar,
     Box,
-    Button, createMuiTheme,
+    Button,
+    createMuiTheme,
     Divider,
     IconButton,
     ThemeProvider,
@@ -30,53 +23,58 @@ import {ArrowBack} from "@material-ui/icons"
 import {blue, pink} from "@material-ui/core/colors";
 import {useLoggedPromise} from "./logger-hooks";
 import {AccountSelect} from "./account-select";
+import {EthersProviderStatus, useEthersProvider} from "./useEthersProvider";
 
 export function App() {
-    const [providerTry, setProviderTry] = useState(0);
-    const [accessTry, setAccessTry] = useState(0);
-    const [provider, , providerState] = useLoggedPromise(() => detectEthereumProvider(), [providerTry]);
-    const [ , , accessState] = useLoggedPromise(
-        async () => (provider != null) && (provider as any).request({ method: 'eth_requestAccounts' }),
-        [provider, accessTry]
-    );
+    const access = useEthersProvider();
 
     return <Router>
         {
-            providerState === 'pending' && <Box m={4}>
+            access.status === EthersProviderStatus.Detecting && <Box m={4}>
                 Looking for Ethereum provider...
                 <Divider />
                 Please wait...
             </Box>
         }
         {
-            providerState !== 'pending' && <>
-                {!!provider && <>
-                    {
-                        accessState === 'pending' && <Box m={4}>
-                            <Typography>Accessing Ethereum...</Typography>
-                            <Divider />
-                            <Typography>(You may need to allow in your provider.)</Typography>
-                        </Box>
-                    }
-                    {
-                        accessState === 'rejected' && <Box m={4}>
-                            <Typography>Rejected Ethereum access!</Typography>
-                            <Divider />
-                            <Button onClick={() => setAccessTry(accessTry + 1)}>Try again</Button>
-                        </Box>
-                    }
-                    {
-                        accessState === 'resolved' && <WithProvider provider={new ethers.providers.Web3Provider(provider as any)} />
-                    }
-                </>}
-                {!!provider || <Box m={4}>
-                    <Typography>No Ethereum provider found.</Typography>
-                    <br />
-                    <Typography>Install one, Metamask is suggested.</Typography>
-                    <Divider />
-                    <Button onClick={() => setProviderTry(providerTry + 1)}>Try again</Button>
-                </Box>}
-            </>
+            access.status === EthersProviderStatus.NotDetected && <Box m={4}>
+                <Typography>No Ethereum provider found.</Typography>
+                <br />
+                <Typography>Install one, Metamask is suggested.</Typography>
+                <Divider />
+                <Button onClick={access.retry}>Try again</Button>
+            </Box>
+        }
+        {
+            access.status === EthersProviderStatus.RequestingAccess && <Box m={4}>
+                <Typography>Accessing Ethereum...</Typography>
+                <Divider />
+                <Typography>(You may need to allow in your provider.)</Typography>
+            </Box>
+        }
+        {
+            access.status === EthersProviderStatus.AccessRejected && <Box m={4}>
+                <Typography>Rejected Ethereum access!</Typography>
+                <Divider />
+                <Button onClick={access.retry}>Try again</Button>
+            </Box>
+        }
+        {
+            access.status === EthersProviderStatus.Connecting && <Box m={4}>
+                Connecting to Ethereum...
+                <Divider />
+                Please wait...
+            </Box>
+        }
+        {
+            access.status === EthersProviderStatus.Disconnected && <Box m={4}>
+                <Typography>Disconnected Ethereum provider!</Typography>
+                <Divider />
+                <Button onClick={access.retry}>Try again</Button>
+            </Box>
+        }
+        {
+            access.status === EthersProviderStatus.Ready && <WithProvider provider={access.ethersProvider} />
         }
     </Router>
 }
