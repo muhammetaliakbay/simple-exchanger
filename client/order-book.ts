@@ -191,7 +191,7 @@ export class OrderBookClient {
             )
         )
     ).pipe(
-        share()
+        shareReplay(1)
     )
 
     readonly bestPrices$: Observable<{seller: BigNumber | undefined, buyer: BigNumber | undefined}> = this.orders$.pipe(
