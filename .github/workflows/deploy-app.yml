@@ -7,8 +7,6 @@ on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
     branches: [ deploy-app ]
-  pull_request:
-    branches: [ deploy-app ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -40,7 +38,7 @@ jobs:
           >dist/.nojekyll &&
           echo -e "simple-exchanger.muhammetaliakbay.com" >> dist/CNAME
 
-      - name: Deploy typedocs and demo web application
+      - name: Deploy GithubPages
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
