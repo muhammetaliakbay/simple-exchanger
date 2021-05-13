@@ -4,7 +4,6 @@ import {
     Switch,
     Route,
     Redirect,
-    Link,
     useRouteMatch,
     useHistory
 } from "react-router-dom";
@@ -20,20 +19,17 @@ import {
     Box,
     Button, createMuiTheme,
     Divider,
-    Icon,
     IconButton,
-    MenuItem,
-    Select,
     ThemeProvider,
     Toolbar,
     Typography,
-    useTheme
 } from "@material-ui/core";
 import {Currency} from "../client/currency";
 import ETH from "../eth.json";
 import {ArrowBack} from "@material-ui/icons"
-import {amber, blue, pink} from "@material-ui/core/colors";
+import {blue, pink} from "@material-ui/core/colors";
 import {useLoggedPromise} from "./logger-hooks";
+import {AccountSelect} from "./account-select";
 
 export function App() {
     const [providerTry, setProviderTry] = useState(0);
@@ -129,7 +125,7 @@ export function WithProvider(
 
     return <ThemeProvider theme={theme}>
         <AppBar position="static">
-            <Toolbar variant="dense">
+            <Toolbar>
                 {
                     <IconButton disabled={!!homeMatch} onClick={() => history.goBack()} edge="start" color="inherit">
                         <ArrowBack />
@@ -140,30 +136,19 @@ export function WithProvider(
                 <Box flexGrow={1} />
                 {
                     addresses && addresses.length > 0 &&
-                    <Select value={address}
-                            style={{color: "white"}}
-                            onChange={e => setAddress(e.target.value as string)}>{
-                        addresses.map(
-                            address => <MenuItem key={address} value={address}>
-                                {address}
-                            </MenuItem>
-                        )
-                    }</Select>
+                    <AccountSelect address={address} addresses={addresses} setAddress={setAddress} />
                 }
             </Toolbar>
         </AppBar>
-        <Box p={4}>
-            <BaseClientProvider client={client}>
-                <WalletProvider wallet={wallet}>
-                    <Switch>
-                        <Route exact path={["/", ""]} render={() => <Redirect to="/official.simple-exchanger.eth" />} />
-                        <Route path="/:exchangerAddress">
-                            <ExchangerPage />
-                        </Route>
-                    </Switch>
-                </WalletProvider>
-            </BaseClientProvider>
-        </Box>
+        <BaseClientProvider client={client}>
+            <WalletProvider wallet={wallet}>
+                <Switch>
+                    <Route exact path={["/", ""]} render={() => <Redirect to="/official.simple-exchanger.eth" />} />
+                    <Route path="/:exchangerAddress">
+                        <ExchangerPage />
+                    </Route>
+                </Switch>
+            </WalletProvider>
+        </BaseClientProvider>
     </ThemeProvider>
 }
-
