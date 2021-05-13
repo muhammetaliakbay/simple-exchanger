@@ -3,7 +3,10 @@ import {
     HashRouter as Router,
     Switch,
     Route,
-    Redirect
+    Redirect,
+    Link,
+    useRouteMatch,
+    useHistory
 } from "react-router-dom";
 import {BaseClientProvider} from "./base-client-provider";
 import {BaseClient} from "../client/base-client";
@@ -13,9 +16,24 @@ import {Wallet} from "../client/wallet";
 import {WalletProvider} from "./wallet-provider";
 import usePromise from "react-use-promise";
 import detectEthereumProvider from "@metamask/detect-provider";
-import {AppBar, Box, Button, Divider, MenuItem, Select, Toolbar, Typography} from "@material-ui/core";
+import {
+    AppBar,
+    Box,
+    Button, createMuiTheme,
+    Divider,
+    Icon,
+    IconButton,
+    MenuItem,
+    Select,
+    ThemeProvider,
+    Toolbar,
+    Typography,
+    useTheme
+} from "@material-ui/core";
 import {Currency} from "../client/currency";
 import ETH from "../eth.json";
+import {ArrowBack} from "@material-ui/icons"
+import {amber, blue, pink} from "@material-ui/core/colors";
 
 export function App() {
     const [providerTry, setProviderTry] = useState(0);
@@ -26,7 +44,7 @@ export function App() {
         [provider, accessTry]
     );
 
-    return <>
+    return <Router>
         {
             providerState === 'pending' && <Box m={4}>
                 Looking for Ethereum provider...
@@ -63,7 +81,7 @@ export function App() {
                 </Box>}
             </>
         }
-    </>
+    </Router>
 }
 
 export function WithProvider(
@@ -92,18 +110,41 @@ export function WithProvider(
         () => new BaseClient(provider, currency),
         [provider]
     )
-    return <>
+
+    const theme = useMemo(
+        () => createMuiTheme({
+            palette: {
+                primary: blue,
+                secondary: pink
+            },
+        }),
+        []
+    )
+
+    const homeMatch = useRouteMatch({
+        path: ["/", "/:exchangerAddress"],
+        exact: true
+    });
+    const history = useHistory()
+
+    return <ThemeProvider theme={theme}>
         <AppBar position="static">
             <Toolbar variant="dense">
-                <Typography>Simple Exchanger</Typography>
+                {
+                    <IconButton disabled={!!homeMatch} onClick={() => history.goBack()} edge="start" color="inherit">
+                        <ArrowBack />
+                    </IconButton>
+                }
+                <Box flexGrow={1} />
+                <Typography variant="h6">Simple Exchanger</Typography>
                 <Box flexGrow={1} />
                 {
                     addresses && addresses.length > 0 &&
                     <Select value={address}
-                            onChange={e => setAddress(e.target.value as string)}
-                            style={{color: "white"}}>{
+                            style={{color: "white"}}
+                            onChange={e => setAddress(e.target.value as string)}>{
                         addresses.map(
-                            address => <MenuItem color="inherit" key={address} value={address}>
+                            address => <MenuItem key={address} value={address}>
                                 {address}
                             </MenuItem>
                         )
@@ -112,19 +153,17 @@ export function WithProvider(
             </Toolbar>
         </AppBar>
         <Box p={4}>
-            <Router>
-                <BaseClientProvider client={client}>
-                    <WalletProvider wallet={wallet}>
-                        <Switch>
-                            <Route exact path={["/", ""]} render={() => <Redirect to="/official.simple-exchanger.eth" />} />
-                            <Route path="/:exchangerAddress">
-                                <ExchangerPage />
-                            </Route>
-                        </Switch>
-                    </WalletProvider>
-                </BaseClientProvider>
-            </Router>
+            <BaseClientProvider client={client}>
+                <WalletProvider wallet={wallet}>
+                    <Switch>
+                        <Route exact path={["/", ""]} render={() => <Redirect to="/official.simple-exchanger.eth" />} />
+                        <Route path="/:exchangerAddress">
+                            <ExchangerPage />
+                        </Route>
+                    </Switch>
+                </WalletProvider>
+            </BaseClientProvider>
         </Box>
-    </>
+    </ThemeProvider>
 }
 
