@@ -1,5 +1,6 @@
 import {HardhatUserConfig, task} from "hardhat/config";
 import '@nomiclabs/hardhat-waffle';
+import {int} from "hardhat/internal/core/params/argumentTypes";
 
 function loadTaskMethod(name: string) {
     return (...args: any[]) => import(`./tasks/${name}`).then(
@@ -37,6 +38,11 @@ task("fund", "Fund from first signer")
     .addParam("account", "The account's address")
     .addParam("amount", "Amount to fund")
     .setAction(loadTaskMethod("fund"));
+
+task("deploy-order-book", "Deploy separate order-book")
+    .addParam("currency", "Currency Code")
+    .addParam("precision", "Precision", undefined, int)
+    .setAction(loadTaskMethod("deploy-order-book"));
 
 module.exports = {
     solidity: "0.8.4",
