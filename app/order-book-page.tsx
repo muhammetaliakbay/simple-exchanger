@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useMemo, useState} from "react";
 import {useParams,} from "react-router-dom";
 import {OrderBookClient} from "../client/order-book";
 import {
@@ -40,6 +40,8 @@ import {TransactionState} from "../client/mempool";
 import {CircularProgressWithLabel} from "./circular-progress";
 import {of} from "rxjs";
 import {useLoggedObservable, useLoggedPromise} from "./logger-hooks";
+import {convertApproximately} from "./conversion-utils";
+import {Simulate} from "react-dom/test-utils";
 
 export function OrderBookPage(
     {
@@ -161,14 +163,53 @@ export function OrderForm(
 ) {
     const [stableToken] = useLoggedPromise(() => orderBook.getStableToken(), [orderBook]);
     const [stableCurrency] = useLoggedPromise(async () => await stableToken?.getCurrency(), [stableToken]);
-    const [amount, setAmount] = useState<BigNumber>();
+    const [volume, setVolume] = useState<BigNumber>();
+    const [balance, setBalance] = useState<BigNumber>();
     const [price, setPrice] = useState<BigNumber>();
+
+    const scale = useMemo(
+        () => BigNumber.from(
+            "1" + ("0".repeat(orderBook.baseClient.currency.precision))
+        ),
+        [orderBook.baseClient.currency.precision]
+    )
 
     const [bestPrices] = useLoggedObservable(
         () => orderBook.bestPrices$,
         [orderBook]
     )
     const bestPrice = orderType === OrderType.Buy ? bestPrices?.seller : bestPrices?.buyer;
+
+    let output: {
+        price: BigNumber,
+        volume: BigNumber,
+        balance: BigNumber
+    } | undefined = useMemo(
+        () => {
+            try {
+                return convertApproximately(
+                    {
+                        price: price ?? (
+                            (volume && balance) ?
+                                undefined :
+                                bestPrice
+                        ),
+                        volume,
+                        balance
+                    },
+                    scale
+                )
+            } catch (e) {
+                return undefined
+            }
+        },
+        [
+            price?.toBigInt(),
+            bestPrice?.toBigInt(),
+            volume?.toBigInt(),
+            balance?.toBigInt()
+        ]
+    )
 
     const [stableBalance] = useLoggedObservable(
         () => stableToken?.getBalance(wallet.getAddress()) ?? of(undefined),
@@ -179,26 +220,45 @@ export function OrderForm(
         [wallet]
     )
 
-    let amountErrorMessage: string | undefined;
-    let priceErrorMessage: string | undefined;
+    let priceErrorMessage: string | undefined = undefined;
+    let volumeErrorMessage: string | undefined = undefined;
+    let balanceErrorMessage: string | undefined = undefined;
 
-    let hasError = false;
+    let validPrice: boolean = false;
+    let validVolume: boolean = false;
+    let validBalance: boolean = false;
 
-    if (amount !== undefined) {
-        if (amount.lte(0)) {
-            amountErrorMessage = 'must be > 0'
-            hasError = true;
+    if (output?.price != undefined) {
+        if (output.price.lte(0)) {
+            priceErrorMessage = "Price must be > 0"
+        } else {
+            validPrice = true;
         }
     }
 
-    if (price !== undefined) {
-        if (price.lte(0)) {
-            priceErrorMessage = 'must be > 0'
-            hasError = true;
+    if (output?.volume != undefined) {
+        if (output.volume.lte(0)) {
+            volumeErrorMessage = "Volume must be > 0"
+        } else {
+            validVolume = true;
         }
     }
 
-    const valid = !hasError && !!amount && !!price;
+    if (output?.balance != undefined) {
+        if (output.balance.lte(0)) {
+            balanceErrorMessage = "Balance must be > 0"
+        } else {
+            validBalance = true;
+        }
+    }
+
+    const hasError =
+        priceErrorMessage == undefined ||
+        volumeErrorMessage == undefined ||
+        balanceErrorMessage == undefined;
+
+    const valid = validPrice && validVolume && validBalance;
+
     const [sending, setSending] = useState(false);
     const [transactions] = useLoggedObservable(
         () => orderBook[
@@ -213,7 +273,9 @@ export function OrderForm(
         try {
             const tx = await orderBook[
                 orderType === OrderType.Sell ? "putSellOrder" : "putBuyOrder"
-            ](wallet.getSigner(), amount!, price!);
+            ](wallet.getSigner(), (
+                orderType === OrderType.Sell ? output!.volume : output!.balance
+            ), output!.price);
             console.log(tx);
         } catch (e) {
             console.error(e);
@@ -240,28 +302,43 @@ export function OrderForm(
             </CardContent>
             <Divider />
             <CardContent>
-                <AmountInput currency={orderType === OrderType.Sell ? orderBook.baseClient.currency : stableCurrency}
-                             onChange={setAmount}
+                <AmountInput currency={orderBook.baseClient.currency}
+                             onChange={setVolume}
+                             placeHolderAmount={output?.volume}
                              textFieldProps={{
-                                 label: orderType === OrderType.Sell ? "Volume" : "Balance",
+                                 label: "Volume",
                                  fullWidth: true,
                                  style: {
                                      marginBottom: theme.spacing(1)
                                  }
                              }}
-                             errorMessage={amountErrorMessage}/>
+                             errorMessage={volumeErrorMessage}/>
                 <AmountInput currency={stableCurrency}
                              onChange={setPrice}
-                             defaultAmount={bestPrice}
+                             placeHolderAmount={output?.price ?? bestPrice}
                              textFieldProps={{
                                  label: "Price",
-                                 fullWidth: true
+                                 fullWidth: true,
+                                 style: {
+                                     marginBottom: theme.spacing(1)
+                                 }
                              }}
                              errorMessage={priceErrorMessage}/>
+                <AmountInput currency={stableCurrency}
+                             onChange={setBalance}
+                             placeHolderAmount={output?.balance}
+                             textFieldProps={{
+                                 label: "Balance",
+                                 fullWidth: true,
+                                 style: {
+                                     marginBottom: theme.spacing(1)
+                                 }
+                             }}
+                             errorMessage={balanceErrorMessage}/>
             </CardContent>
             <Divider/>
             <CardActions>
-                <Button disabled={!valid || sending} onClick={() => putOrder()}>
+                <Button disabled={hasError || !valid || sending} onClick={() => putOrder()}>
                     {orderType === OrderType.Sell ? "Sell" : "Buy"}
                     {pending > 0 && <CircularProgressWithLabel label={pending} />}
                 </Button>
