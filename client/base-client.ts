@@ -138,28 +138,28 @@ export class BaseClient {
             [address: string]: ExtendedContract<any>
         }
     } = {}
-    getContract<T extends ExtendedContract<T>>(definition: ContractDefinition<T>, address: string) {
-        return this.contractCache[address] ??= definition.loadContract(address)
+    getContract<T extends ExtendedContract<T>>(definition: ContractDefinition<T>, address: string): T {
+        return (this.contractCache[address] ??= definition.loadContract(address)) as T
     }
 
     private exchangerCache: {
         [address: string]: ExchangerClient
     } = {}
-    getExchangerClient(address: string) {
+    getExchangerClient(address: string): ExchangerClient {
         return this.exchangerCache[address] ??= new ExchangerClient(this, address)
     }
 
     private stableTokenCache: {
         [address: string]: StableTokenClient
     } = {}
-    getStableTokenClient(address: string) {
+    getStableTokenClient(address: string): StableTokenClient {
         return this.stableTokenCache[address] ??= new StableTokenClient(this, address)
     }
 
     private orderBookCache: {
         [address: string]: OrderBookClient
     } = {}
-    getOrderBookClient(address: string) {
+    getOrderBookClient(address: string): OrderBookClient {
         return this.orderBookCache[address] ??= new OrderBookClient(this, address)
     }
 
