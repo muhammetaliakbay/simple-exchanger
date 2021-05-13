@@ -253,9 +253,9 @@ export function OrderForm(
     }
 
     const hasError =
-        priceErrorMessage == undefined ||
-        volumeErrorMessage == undefined ||
-        balanceErrorMessage == undefined;
+        priceErrorMessage != undefined ||
+        volumeErrorMessage != undefined ||
+        balanceErrorMessage != undefined;
 
     const valid = validPrice && validVolume && validBalance;
 
