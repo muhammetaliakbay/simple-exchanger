@@ -9,8 +9,14 @@
     "jsx": "react",
     "sourceMap": true,
     "resolveJsonModule": true,
+    "lib": [
+      "es2019.symbol",
+      "ES2019",
+      "dom"
+    ]
   },
   "include": [
-    "./tasks", "./test", "./app", "./client"],
+    "./tasks", "./test", "./app", "./client", "./contracts"
+  ],
   "files": ["./hardhat.config.ts"]
 }
