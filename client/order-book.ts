@@ -1,13 +1,14 @@
 import {BaseClient} from "./base-client";
 import {OrderBookDefinition} from "../instances/definitions";
-import {OrderAdd, OrderBook, OrderType, OrderUpdate, Stats, UpdateType} from "../contracts/order-book";
+import {OrderAdd, OrderType, OrderUpdate, Stats, TOrderBook, UpdateType} from "../contracts/order-book";
 import {StableTokenClient} from "./stable-token";
-import {defer, Observable, of} from "rxjs";
-import {concatMap, map, share, shareReplay, switchMap} from "rxjs/operators";
+import {defer, Observable} from "rxjs";
+import {map, share, shareReplay} from "rxjs/operators";
 import {OrderEntryWithId} from "../contracts/order";
-import {Event, Signer, BigNumber, BigNumberish} from "ethers"
-import {TransactionResponse} from "@ethersproject/abstract-provider";
+import {Event, BigNumber, BigNumberish} from "ethers"
 import {StoredTransaction} from "./mempool";
+import {Account, SentTransaction} from "./providers";
+import {addressEquals} from "./address-util";
 
 export interface Orders {
     sellers: OrderEntryWithId[],
@@ -15,13 +16,13 @@ export interface Orders {
 }
 
 export class OrderBookClient {
-    readonly contract: OrderBook;
+    readonly contract: TOrderBook;
     constructor(
         readonly baseClient: BaseClient,
-        contract: OrderBook | string
+        contract: TOrderBook | string
     ) {
         if (typeof contract == "string") {
-            contract = OrderBookDefinition.loadContract(contract).connect(baseClient.provider)
+            contract = OrderBookDefinition.loadContract(contract).connect(baseClient.provider.provider)
         }
         this.contract = contract;
     }
@@ -46,63 +47,77 @@ export class OrderBookClient {
         )
     }
 
-    async putSellOrder(signer: Signer, volume: BigNumberish, price: BigNumberish): Promise<TransactionResponse> {
-        const signerContract = this.contract.connect(signer);
-        return this.baseClient.memPool.putResponse(
-            await signerContract.putSellOrder(price, {
+    async putSellOrder(account: Account, volume: BigNumberish, price: BigNumberish): Promise<SentTransaction> {
+        const unsigned = await this.contract.populateTransaction.putSellOrder(
+            price, {
                 value: volume
-            })
+            }
         )
+        const signed = await account.sendTransaction({
+            ...unsigned,
+            chainId: this.baseClient.provider.chainId
+        })
+        return this.baseClient.memPool.putSent(signed)
     }
 
-    async putBuyOrder(signer: Signer, balance: BigNumberish, price: BigNumberish): Promise<TransactionResponse> {
-        const signerContract = this.contract.connect(signer);
-        return this.baseClient.memPool.putResponse(
-            await signerContract.putBuyOrder(balance, price)
+    async putBuyOrder(account: Account, balance: BigNumberish, price: BigNumberish): Promise<SentTransaction> {
+        const unsigned = await this.contract.populateTransaction.putBuyOrder(
+            balance, price
         )
+        const signed = await account.sendTransaction({
+            ...unsigned,
+            chainId: this.baseClient.provider.chainId
+        })
+        return this.baseClient.memPool.putSent(signed)
     }
 
-    async cancelBuyOrder(signer: Signer, id: BigNumberish): Promise<TransactionResponse> {
-        const signerContract = this.contract.connect(signer);
-        return this.baseClient.memPool.putResponse(
-            await signerContract.cancelBuyOrder(id)
+    async cancelBuyOrder(account: Account, id: BigNumberish): Promise<SentTransaction> {
+        const unsigned = await this.contract.populateTransaction.cancelBuyOrder(
+            id
         )
+        const signed = await account.sendTransaction({
+            ...unsigned,
+            chainId: this.baseClient.provider.chainId
+        })
+        return this.baseClient.memPool.putSent(signed)
     }
 
-    async cancelSellOrder(signer: Signer, id: BigNumberish): Promise<TransactionResponse> {
-        const signerContract = this.contract.connect(signer);
-        return this.baseClient.memPool.putResponse(
-            await signerContract.cancelSellOrder(id)
+    async cancelSellOrder(account: Account, id: BigNumberish): Promise<SentTransaction> {
+        const unsigned = await this.contract.populateTransaction.cancelSellOrder(
+            id
         )
+        const signed = await account.sendTransaction({
+            ...unsigned,
+            chainId: this.baseClient.provider.chainId
+        })
+        return this.baseClient.memPool.putSent(signed)
     }
 
-    private watchTransactions(signer: Signer, methodName: string): Observable<StoredTransaction[]> {
-        return defer(() => signer.getAddress()).pipe(
-            switchMap(
-                address => this.baseClient.memPool.watch(
-                    (tx) => (
-                        tx.from === address &&
-                        tx.to === this.contract.address &&
-                        this.contract.interface.parseTransaction(
-                            tx
-                        ).name === methodName
-                    )
+    private watchTransactions(account: string, methodName: string): Observable<StoredTransaction[]> {
+        return defer(
+            () => this.baseClient.memPool.watch(
+                (tx) => (
+                    addressEquals(tx.from, account) &&
+                    addressEquals(tx.to, this.contract.address) &&
+                    this.contract.interface.parseTransaction(
+                        tx
+                    ).name === methodName
                 )
             )
         )
     }
 
-    watchSellTransactions(signer: Signer): Observable<StoredTransaction[]> {
-        return this.watchTransactions(signer, 'putSellOrder')
+    watchSellTransactions(account: string): Observable<StoredTransaction[]> {
+        return this.watchTransactions(account, 'putSellOrder')
     }
-    watchBuyTransactions(signer: Signer): Observable<StoredTransaction[]> {
-        return this.watchTransactions(signer, 'putBuyOrder')
+    watchBuyTransactions(account: string): Observable<StoredTransaction[]> {
+        return this.watchTransactions(account, 'putBuyOrder')
     }
-    watchCancelSellTransactions(signer: Signer): Observable<StoredTransaction[]> {
-        return this.watchTransactions(signer, 'cancelSellOrder')
+    watchCancelSellTransactions(account: string): Observable<StoredTransaction[]> {
+        return this.watchTransactions(account, 'cancelSellOrder')
     }
-    watchCancelBuyTransactions(signer: Signer): Observable<StoredTransaction[]> {
-        return this.watchTransactions(signer, 'cancelBuyOrder')
+    watchCancelBuyTransactions(account: string): Observable<StoredTransaction[]> {
+        return this.watchTransactions(account, 'cancelBuyOrder')
     }
 
     readonly stats$: Observable<Stats> = defer(

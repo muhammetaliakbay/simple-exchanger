@@ -1,10 +1,11 @@
-import {StableToken} from "../contracts/stable-token";
+import {TStableToken} from "../contracts/stable-token";
 import {BigNumber} from "ethers";
 import {Observable} from "rxjs";
 import {pluck, shareReplay} from "rxjs/operators";
 import {BaseClient} from "./base-client";
 import {StableTokenDefinition} from "../instances/definitions";
 import {Currency} from "./currency";
+import {addressNormalize} from "./address-util";
 
 export interface Balance {
     available: BigNumber,
@@ -13,13 +14,13 @@ export interface Balance {
 }
 
 export class StableTokenClient {
-    readonly contract: StableToken;
+    readonly contract: TStableToken;
     constructor(
         readonly baseClient: BaseClient,
-        contract: StableToken | string
+        contract: TStableToken | string
     ) {
         if (typeof contract == "string") {
-            contract = StableTokenDefinition.loadContract(contract).connect(baseClient.provider)
+            contract = StableTokenDefinition.loadContract(contract).connect(baseClient.provider.provider)
         }
         this.contract = contract;
     }
@@ -66,6 +67,7 @@ export class StableTokenClient {
 
     private accountCache: {[address: string]: StableTokenAccount} = {}
     getAccount(address: string): StableTokenAccount {
+        address = addressNormalize(address)
         return this.accountCache[address] ??= new StableTokenAccount(this, address)
     }
 }

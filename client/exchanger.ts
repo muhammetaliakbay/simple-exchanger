@@ -1,18 +1,18 @@
 import {BaseClient} from "./base-client";
 import {ExchangerDefinition} from "../instances/definitions";
-import {Exchanger} from "../contracts/exchanger";
+import {TExchanger} from "../contracts/exchanger";
 import {StableTokenClient} from "./stable-token";
 import {collectArray} from "./array-util";
 import {OrderBookClient} from "./order-book";
 
 export class ExchangerClient {
-    readonly contract: Exchanger;
+    readonly contract: TExchanger;
     constructor(
         private baseClient: BaseClient,
-        contract: Exchanger | string
+        contract: TExchanger | string
     ) {
         if (typeof contract == "string") {
-            contract = ExchangerDefinition.loadContract(contract).connect(baseClient.provider)
+            contract = ExchangerDefinition.loadContract(contract).connect(baseClient.provider.provider)
         }
         this.contract = contract;
     }

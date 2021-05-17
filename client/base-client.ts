@@ -10,8 +10,7 @@ import {
     toArray
 } from "rxjs/operators";
 import {BigNumber, Contract, Event} from "ethers"
-import {Provider} from "@ethersproject/abstract-provider";
-import {ExtendedContract, ExtendedEventFilter} from "../contracts/extended";
+import {TContract, TEventFilter} from "../contracts/extended";
 import {ContractDefinition} from "../instances/loader";
 import {StableTokenClient} from "./stable-token";
 import {ExchangerClient} from "./exchanger";
@@ -19,6 +18,8 @@ import {OrderBookClient} from "./order-book";
 import {Currency} from "./currency";
 import {exhaustMapWithTrailing} from "./reactive-util";
 import {MemPool} from "./mempool";
+import {ReactiveProvider} from "./reactive-provider";
+import {addressNormalize} from "./address-util";
 
 function sortEventsAndRemoveDuplicates(events: Event[]): Event[] {
     const sorted = events.sort(
@@ -43,24 +44,23 @@ function sortEventsAndRemoveDuplicates(events: Event[]): Event[] {
 export class BaseClient {
 
     constructor(
-        readonly provider: Provider,
+        readonly memPool: MemPool,
+        readonly provider: ReactiveProvider,
         readonly currency: Currency
     ) {
     }
 
-    readonly memPool: MemPool = MemPool.start(0, this.provider)
-
     readonly blockNumber$: Observable<number> = merge(
         defer(
-            () => this.provider.getBlockNumber()
+            () => this.provider.provider.getBlockNumber()
         ),
         new Observable<number>(
             subscriber => {
                 const listener = (blockNumber: number) => {
                     subscriber.next(blockNumber);
                 }
-                this.provider.on('block', listener);
-                return () => this.provider.off('block', listener);
+                this.provider.provider.on('block', listener);
+                return () => this.provider.provider.off('block', listener);
             }
         )
     ).pipe(
@@ -99,9 +99,9 @@ export class BaseClient {
         );
     }
 
-    onEvents<T, E>(
+    onEvents<T, E extends any>(
         contract: Contract,
-        filters: ExtendedEventFilter<E>[],
+        filters: TEventFilter<any>[],
         initial: (blockNumber: number) => ObservableInput<T>,
         update?: (blockRange: [startBlockNumber: number, endBlockNumber: number], events: (Event & {args: E})[], previous: T) => ObservableInput<T>
     ): Observable<T> {
@@ -130,15 +130,16 @@ export class BaseClient {
     }
 
     async resolveName(name: string): Promise<string> {
-        return await this.provider.resolveName(name)
+        return await this.provider.provider.resolveName(name)
     }
 
     private contractCache: {
         [name: string]: {
-            [address: string]: ExtendedContract<any>
+            [address: string]: TContract<any>
         }
     } = {}
-    getContract<T extends ExtendedContract<T>>(definition: ContractDefinition<T>, address: string): T {
+    getContract<T extends TContract<any>>(definition: ContractDefinition<T>, address: string): T {
+        address = addressNormalize(address)
         return (this.contractCache[address] ??= definition.loadContract(address)) as T
     }
 
@@ -146,6 +147,7 @@ export class BaseClient {
         [address: string]: ExchangerClient
     } = {}
     getExchangerClient(address: string): ExchangerClient {
+        address = addressNormalize(address)
         return this.exchangerCache[address] ??= new ExchangerClient(this, address)
     }
 
@@ -153,6 +155,7 @@ export class BaseClient {
         [address: string]: StableTokenClient
     } = {}
     getStableTokenClient(address: string): StableTokenClient {
+        address = addressNormalize(address)
         return this.stableTokenCache[address] ??= new StableTokenClient(this, address)
     }
 
@@ -160,6 +163,7 @@ export class BaseClient {
         [address: string]: OrderBookClient
     } = {}
     getOrderBookClient(address: string): OrderBookClient {
+        address = addressNormalize(address)
         return this.orderBookCache[address] ??= new OrderBookClient(this, address)
     }
 
@@ -167,9 +171,10 @@ export class BaseClient {
         [address: string]: Observable<BigNumber>
     } = {}
     getBalance(address: string): Observable<BigNumber> {
+        address = addressNormalize(address)
         return this.balanceCache[address] ??= this.blockNumber$.pipe(
             exhaustMapWithTrailing(
-                blockNumber => this.provider.getBalance(address, blockNumber)
+                blockNumber => this.provider.provider.getBalance(address, blockNumber)
             ),
             shareReplay(1)
         )
