@@ -33,15 +33,15 @@ import {OrderEntryWithId} from "../contracts/order";
 import {Currency} from "../client/currency";
 import {AmountView} from "./amount-view";
 import {OrderType} from "../contracts/order-book";
-import {useWallet} from "./wallet-provider";
-import {Wallet} from "../client/wallet";
+import {useAccount} from "./account-provider";
 import {ExchangerClient} from "../client/exchanger";
 import {TransactionState} from "../client/mempool";
 import {CircularProgressWithLabel} from "./circular-progress";
 import {of} from "rxjs";
 import {useLoggedObservable, useLoggedPromise} from "./logger-hooks";
 import {convertApproximately} from "./conversion-utils";
-import {Simulate} from "react-dom/test-utils";
+import {Account} from "../client/providers";
+import {addressEquals} from "../client/address-util";
 
 export function OrderBookPage(
     {
@@ -84,7 +84,7 @@ export function OrderBookView(
         orderBook: OrderBookClient
     }
 ) {
-    const wallet = useWallet();
+    const account = useAccount();
 
     const [tab, setTab] = useState<OrderType>(OrderType.Buy)
 
@@ -110,14 +110,14 @@ export function OrderBookView(
                 <Zoom in={!sm || tab === OrderType.Sell} unmountOnExit timeout={{exit: 0, enter: 350}}>
                     <Grid item xs={12} md={6}>
                         <Grid container spacing={3}>
-                            <OrderBookTab orderBook={orderBook} wallet={wallet} orderType={OrderType.Sell} />
+                            <OrderBookTab orderBook={orderBook} account={account} orderType={OrderType.Sell} />
                         </Grid>
                     </Grid>
                 </Zoom>
                 <Zoom in={!sm || tab === OrderType.Buy} unmountOnExit timeout={{exit: 0, enter: 350}}>
                     <Grid item xs={12} md={6}>
                         <Grid container spacing={3}>
-                            <OrderBookTab orderBook={orderBook} wallet={wallet} orderType={OrderType.Buy} />
+                            <OrderBookTab orderBook={orderBook} account={account} orderType={OrderType.Buy} />
                         </Grid>
                     </Grid>
                 </Zoom>
@@ -129,18 +129,18 @@ export function OrderBookView(
 export function OrderBookTab(
     {
         orderBook,
-        wallet,
+        account,
         orderType
     }: {
         orderBook: OrderBookClient,
-        wallet?: Wallet,
+        account?: Account,
         orderType: OrderType
     }
 ) {
     return <>
         {orderType === OrderType.Sell && <Hidden mdDown><Grid item xs={4} /></Hidden>}
         <Grid item xs={12} lg={8}>
-            {wallet && <OrderForm orderBook={orderBook} wallet={wallet} orderType={orderType} />}
+            {account && <OrderForm orderBook={orderBook} account={account} orderType={orderType} />}
         </Grid>
         {orderType === OrderType.Buy && <Hidden mdDown><Grid item xs={4} /></Hidden>}
 
@@ -153,11 +153,11 @@ export function OrderBookTab(
 export function OrderForm(
     {
         orderBook,
-        wallet,
+        account,
         orderType
     }: {
         orderBook: OrderBookClient,
-        wallet: Wallet,
+        account: Account,
         orderType: OrderType
     }
 ) {
@@ -212,12 +212,12 @@ export function OrderForm(
     )
 
     const [stableBalance] = useLoggedObservable(
-        () => stableToken?.getBalance(wallet.getAddress()) ?? of(undefined),
-        [stableToken, wallet]
+        () => stableToken?.getBalance(account.address) ?? of(undefined),
+        [stableToken, account]
     )
     const [cryptoBalance] = useLoggedObservable(
-        () => orderBook.baseClient.getBalance(wallet.getAddress()),
-        [wallet]
+        () => orderBook.baseClient.getBalance(account.address),
+        [account]
     )
 
     let priceErrorMessage: string | undefined = undefined;
@@ -263,8 +263,8 @@ export function OrderForm(
     const [transactions] = useLoggedObservable(
         () => orderBook[
             orderType === OrderType.Sell ? "watchSellTransactions" : "watchBuyTransactions"
-        ](wallet.getSigner()),
-        [orderBook, wallet]
+        ](account.address),
+        [orderBook, account]
     )
     const pending = transactions?.filter(tx => tx.state === TransactionState.Pending)?.length ?? 0
 
@@ -273,7 +273,7 @@ export function OrderForm(
         try {
             const tx = await orderBook[
                 orderType === OrderType.Sell ? "putSellOrder" : "putBuyOrder"
-            ](wallet.getSigner(), (
+            ](account, (
                 orderType === OrderType.Sell ? output!.volume : output!.balance
             ), output!.price);
             console.log(tx);
@@ -361,12 +361,12 @@ export function OrderStocks(
 
     const [orders] = useLoggedObservable(() => orderBook.orders$, [orderBook]);
 
-    const wallet = useWallet();
+    const account = useAccount();
 
     return <>{
         stableTokenCurrency && orders &&
         <OrderTable orderBook={orderBook}
-                    wallet={wallet}
+                    account={account}
                     currency={orderBook.baseClient.currency}
                     stableTokenCurrency={stableTokenCurrency}
                     orderType={orderType}
@@ -381,21 +381,21 @@ function OrderTable(
         currency,
         stableTokenCurrency,
         orderType,
-        wallet
+        account
     }: {
         orderBook: OrderBookClient,
         orders: OrderEntryWithId[],
         currency: Currency,
         stableTokenCurrency: Currency,
         orderType: OrderType,
-        wallet?: Wallet
+        account?: Account
     }
 ) {
     const [cancelsTransactions] = useLoggedObservable(
-        () => wallet == undefined ? of(undefined) : orderBook[
+        () => account == undefined ? of(undefined) : orderBook[
             orderType === OrderType.Buy ? "watchCancelBuyTransactions" : "watchCancelSellTransactions"
-            ](wallet.getSigner()),
-        [orderBook, wallet]
+            ](account.address),
+        [orderBook, account]
     )
     const pendingCancelTransactions = cancelsTransactions?.filter(tx => tx.state === TransactionState.Pending)?.length
 
@@ -414,7 +414,7 @@ function OrderTable(
                     orders.map(
                         order => <OrderRow key={order.id.toNumber()}
                                            orderBook={orderBook}
-                                           wallet={wallet}
+                                           account={account}
                                            pendingCancels={pendingCancelTransactions}
                                            order={order}
                                            orderType={orderType}
@@ -434,7 +434,7 @@ function OrderRow(
         currency,
         stableTokenCurrency,
         orderType,
-        wallet,
+        account,
         pendingCancels
     }: {
         orderBook: OrderBookClient,
@@ -442,11 +442,11 @@ function OrderRow(
         currency: Currency,
         stableTokenCurrency: Currency,
         orderType: OrderType,
-        wallet?: Wallet,
+        account?: Account,
         pendingCancels?: number
     }
 ) {
-    const owned = wallet?.getAddress() === order.entry.account;
+    const owned = addressEquals(account?.address, order.entry.account);
 
     const [cancelling, setCancelling] = useState(false);
 
@@ -454,7 +454,7 @@ function OrderRow(
         setCancelling(true);
         try {
             const tx = await orderBook[orderType === OrderType.Sell ? 'cancelSellOrder' : 'cancelBuyOrder'](
-                wallet!.getSigner(),
+                account!,
                 order.id
             )
             console.log(tx);
