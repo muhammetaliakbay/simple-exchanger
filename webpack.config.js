@@ -1,5 +1,7 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
+const webpack = require("webpack");
 
 module.exports = {
     entry: './app/index.tsx',
@@ -9,6 +11,7 @@ module.exports = {
             disableDotRule: true
         }
     },
+    target: 'web',
     module: {
         rules: [
             {
@@ -37,6 +40,14 @@ module.exports = {
         path: path.resolve(__dirname, 'dist')
     },
     plugins: [
+        new webpack.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
+        }),
+        new CopyPlugin({
+            patterns: [
+                { from: "app/assets", to: "assets" },
+            ],
+        }),
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, 'app/index.html'),
             filename: 'index.html'
