@@ -20,8 +20,8 @@ import {
 } from "@material-ui/core";
 import {OrderBookClient} from "../client/order-book";
 import {StableTokenName} from "./stable-token";
-import {useWallet} from "./wallet-provider";
-import {WalletOverview} from "./wallet-overview";
+import {useAccount} from "./account-provider";
+import {AccountOverview} from "./account-overview";
 import {AmountView} from "./amount-view";
 import {ethers} from "ethers";
 import {OrderBookPage} from "./order-book-page";
@@ -77,14 +77,14 @@ export function ExchangerView(
 ) {
     const [tokens] = useLoggedPromise(() => exchanger.getStableTokens(), [exchanger])
     const [orderBooks] = useLoggedPromise(() => exchanger.getOrderBooks(), [exchanger])
-    const wallet = useWallet();
+    const account = useAccount();
 
-    const showWallet = wallet && tokens;
+    const showWallet = account && tokens;
 
     return <Box p={4}>
         <Grid container spacing={2}>
             {showWallet && <Grid item xs={12} lg={6}>
-                <WalletOverview wallet={wallet!} tokens={tokens!} />
+                <AccountOverview account={account!} tokens={tokens!} />
             </Grid>}
             <Grid item xs={12} lg={showWallet ? 6 : 12}>
                 <TableContainer component={Paper}>
