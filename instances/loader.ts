@@ -1,16 +1,16 @@
-import {ExtendedArtifact, ExtendedContract} from "../contracts/extended";
+import {TArtifact, TContract} from "../contracts/extended";
 import {ContractFactory} from "ethers";
 
-export class ContractDefinition<T extends ExtendedContract<T>> {
+export class ContractDefinition<T extends TContract<any>> {
     constructor(
         readonly fileName: `${string}.sol`,
         readonly contractName: string
     ) {
     }
 
-    private artifact?: ExtendedArtifact<T>
+    private artifact?: TArtifact<T>
 
-    loadArtifact(): ExtendedArtifact<T> {
+    loadArtifact(): TArtifact<T> {
         return this.artifact ??= require(`../artifacts/contracts/${this.fileName}/${this.contractName}`)
     }
 

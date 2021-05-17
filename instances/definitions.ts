@@ -1,16 +1,16 @@
 import {ContractDefinition} from "./loader";
-import {StableToken} from "../contracts/stable-token";
-import {Exchanger} from "../contracts/exchanger";
-import {OrderBook} from "../contracts/order-book";
+import {TStableToken} from "../contracts/stable-token";
+import {TExchanger} from "../contracts/exchanger";
+import {TOrderBook} from "../contracts/order-book";
 
-export const StableTokenDefinition = new ContractDefinition<StableToken>(
+export const StableTokenDefinition = new ContractDefinition<TStableToken>(
     "stable-token.sol", "StableToken"
 );
 
-export const ExchangerDefinition = new ContractDefinition<Exchanger>(
+export const ExchangerDefinition = new ContractDefinition<TExchanger>(
     "exchanger.sol", "Exchanger"
 );
 
-export const OrderBookDefinition = new ContractDefinition<OrderBook>(
+export const OrderBookDefinition = new ContractDefinition<TOrderBook>(
     "order-book.sol", "OrderBook"
 )
