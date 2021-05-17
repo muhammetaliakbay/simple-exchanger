@@ -1,9 +1,7 @@
 import { ethers } from "hardhat";
-import {BaseClient} from "../client/base-client";
-import {getAddress} from "./task-utils";
+import {baseClient, getAddress} from "./task-utils";
 import {fromFixedPointString} from "../app/amount-utils";
 import {deployment} from "../deployment/deployment-info";
-import ETH from "../eth.json";
 
 export default async function(
     {
@@ -18,7 +16,6 @@ export default async function(
 ) {
     account = await getAddress(account)
 
-    const baseClient = new BaseClient(ethers.provider, ETH)
     const exchanger = baseClient.getExchangerClient(deployment().exchangeAddress)
     const stableToken = await exchanger.getStableToken(currency)
     if (!stableToken) {

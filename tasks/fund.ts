@@ -1,7 +1,6 @@
 import { ethers } from "hardhat";
-import {BaseClient} from "../client/base-client";
 import {fromFixedPointString} from "../app/amount-utils";
-import ETH from "../eth.json";
+import {baseClient} from "./task-utils";
 
 export default async function(
     {
@@ -12,7 +11,6 @@ export default async function(
         amount: string,
     }
 ) {
-    const baseClient = new BaseClient(ethers.provider, ETH)
     const amountInteger = fromFixedPointString(amount, baseClient.currency.precision)
     const firstSigner = (await ethers.getSigners())[0]
     await (await firstSigner.sendTransaction({

@@ -5,7 +5,7 @@ import {deployment} from "../deployment/deployment-info";
 import {ExchangerDefinition} from "../instances/definitions";
 import {deployOrderLibrary} from "../deployment/order";
 import ETH from "../eth.json"
-import {getAddress, getSigner} from "./task-utils";
+import {getSigner} from "./task-utils";
 
 export default async function(
     {
