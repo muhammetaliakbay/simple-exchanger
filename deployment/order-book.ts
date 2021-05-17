@@ -1,18 +1,18 @@
 import { Contract } from "ethers";
 import {HardhatEthersHelpers} from "@nomiclabs/hardhat-ethers/types";
-import {OrderBook} from "../contracts/order-book";
+import {TOrderBook} from "../contracts/order-book";
 import {deployOrderLibrary} from "./order";
-import {StableToken} from "../contracts/stable-token";
+import {TStableToken} from "../contracts/stable-token";
 import {SYNC} from "./sync";
 
 export async function deployOrderBook(
     ethers: HardhatEthersHelpers,
-    stableToken: StableToken,
+    stableToken: TStableToken,
     precision: number,
     libraries?: {
         "Order"?: Contract
     }
-): Promise<OrderBook> {
+): Promise<TOrderBook> {
     const OrderBook = await ethers.getContractFactory("OrderBook", {
         libraries: {
             "Order": (libraries?.Order ?? await deployOrderLibrary(ethers)).address
@@ -22,5 +22,5 @@ export async function deployOrderBook(
     return await SYNC.runDeploy(() => OrderBook.deploy(
         stableToken.address,
         precision
-    ) as Promise<OrderBook>);
+    ) as Promise<TOrderBook>);
 }
