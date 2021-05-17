@@ -1,34 +1,35 @@
-import {EventFilter, BigNumberish, BigNumber} from "ethers";
-import {TransactionResponse} from "@ethersproject/abstract-provider";
-import {ExtendedContract, Overrides} from "./extended";
+import {BigNumber} from "ethers";
 import {Currency} from "../client/currency";
+import {TContract} from "./extended";
 
 export type Balance = [
     available: BigNumber,
     locked: BigNumber
 ];
 
-export interface StableToken extends ExtendedContract<StableToken> {
-    admin(): Promise<string>
-    code(): Promise<string>
-    precision(): Promise<number>
-    getCurrency(): Promise<Currency>
-    addManager(newManager: string): Promise<TransactionResponse>
-    mint(to: string, amount: BigNumberish): Promise<TransactionResponse>
-    burn(from: string, amount: BigNumberish): Promise<TransactionResponse>
-    transfer(from: string, to: string, amount: BigNumberish): Promise<TransactionResponse>
-    transferLocked(from: string, to: string, amount: BigNumberish): Promise<TransactionResponse>
-    lock(from: string, amount: BigNumberish): Promise<TransactionResponse>
-    unlock(to: string, amount: BigNumberish): Promise<TransactionResponse>
-    availableBalance(account: string): Promise<BigNumber>
-    lockedBalance(account: string): Promise<BigNumber>
-    balance(account: string, overrides?: Overrides): Promise<Balance>
+export type TStableToken = TContract<{
+    functions: {
+        admin(): string
+        code(): string
+        precision(): number
+        getCurrency(): Currency
+        addManager(newManager: string): void
+        mint(to: string, amount: BigNumber): void
+        burn(from: string, amount: BigNumber): void
+        transfer(from: string, to: string, amount: BigNumber): void
+        transferLocked(from: string, to: string, amount: BigNumber): void
+        lock(from: string, amount: BigNumber): void
+        unlock(to: string, amount: BigNumber): void
+        availableBalance(account: string): BigNumber
+        lockedBalance(account: string): BigNumber
+        balance(account: string): Balance
+    }
 
     filters: {
-        Mint(manager: string|null, to: string|null): EventFilter
-        Burn(manager: string|null, from: string|null): EventFilter
-        Transfer(manager: string|null, from: string|null, to: string|null): EventFilter
-        Lock(manager: string|null, from: string|null): EventFilter
-        Unlock(manager: string|null, to: string|null): EventFilter
+        Mint(manager: string, to: string)
+        Burn(manager: string, from: string)
+        Transfer(manager: string, from: string, to: string)
+        Lock(manager: string, from: string)
+        Unlock(manager: string, to: string)
     }
-}
+}>

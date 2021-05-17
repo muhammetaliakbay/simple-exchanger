@@ -1,11 +1,14 @@
-import {Contract} from "ethers";
 import {BigNumberish} from "@ethersproject/bignumber";
+import {TContract} from "./extended";
+import {BigNumber} from "ethers";
 
-export interface SortedTest extends Contract {
-    length(): Promise<BigNumberish>
-    all(): Promise<string[]>
-    insert(rank: BigNumberish, value: string, asc: boolean): Promise<void>
-    removeFirst(): Promise<void>
-    removeAt(offset: BigNumberish): Promise<void>
-    remove(id: BigNumberish): Promise<void>
-}
+export type TSortedTest = TContract<{
+    functions: {
+        length(): BigNumber
+        all(): string[]
+        insert(rank: BigNumberish, value: string, asc: boolean): void
+        removeFirst(): void
+        removeAt(offset: BigNumberish): void
+        remove(id: BigNumberish): void
+    }
+}>

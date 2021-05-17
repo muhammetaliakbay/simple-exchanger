@@ -1,6 +1,7 @@
 import {BigNumber, BigNumberish} from "@ethersproject/bignumber";
-import {ExtendedContract, ExtendedEventFilter, Overrides, PayableOverrides} from "./extended";
-import {TransactionResponse} from "@ethersproject/abstract-provider";
+import {
+    TContract,
+} from "./extended";
 import {OrderEntry, OrderEntryWithId} from "./order";
 
 export interface Stats {
@@ -31,20 +32,22 @@ export interface OrderAdd {
     index: BigNumber
 }
 
-export interface OrderBook extends ExtendedContract<OrderBook> {
-    admin(): Promise<string>
-    divider(): Promise<BigNumber>
-    stableToken(): Promise<string>
-    getStats(overrides?: Overrides): Promise<Stats>
-    getOrder(id: BigNumberish, orderType: OrderType, overrides?: Overrides): Promise<OrderEntry>
-    getAllOrders(orderType: OrderType, overrides?: Overrides): Promise<OrderEntryWithId[]>
-    putSellOrder(price: BigNumberish, overrides: PayableOverrides): Promise<TransactionResponse>;
-    putBuyOrder(balance: BigNumberish, price: BigNumberish): Promise<TransactionResponse>;
-    cancelSellOrder(id: BigNumberish): Promise<TransactionResponse>;
-    cancelBuyOrder(id: BigNumberish): Promise<TransactionResponse>;
-
-    filters: {
-        OrderUpdate(orderId: BigNumberish|null, orderType: OrderType|null, updateType: UpdateType|null): ExtendedEventFilter<OrderUpdate>
-        OrderAdd(orderId: BigNumberish|null, orderType: OrderType|null, index: BigNumberish|null): ExtendedEventFilter<OrderAdd>
+export type TOrderBook = TContract<{
+    functions: {
+        admin(): string
+        divider(): BigNumber
+        stableToken(): string
+        getStats(): Stats
+        getOrder(id: BigNumber, orderType: OrderType): OrderEntry
+        getAllOrders(orderType: OrderType): OrderEntryWithId[]
+        putSellOrder(price: BigNumber): void
+        putBuyOrder(balance: BigNumber, price: BigNumberish): void
+        cancelSellOrder(id: BigNumber): void
+        cancelBuyOrder(id: BigNumber): void
     }
-}
+
+    events: {
+        OrderUpdate(orderId: BigNumberish, orderType: OrderType, updateType: UpdateType)
+        OrderAdd(orderId: BigNumberish, orderType: OrderType, index: BigNumberish)
+    }
+}>;
