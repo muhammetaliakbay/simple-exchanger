@@ -1,109 +1,123 @@
-import React, {useMemo, useState} from "react";
-import {HashRouter as Router, Redirect, Route, Switch, useHistory, useRouteMatch} from "react-router-dom";
+import React, {useEffect, useMemo, useState} from "react";
+import {HashRouter as Router, Redirect, Route, Switch} from "react-router-dom";
 import {BaseClientProvider} from "./base-client-provider";
 import {BaseClient} from "../client/base-client";
-import {ethers} from "ethers";
 import {ExchangerPage} from "./exchanger-page";
-import {Wallet} from "../client/wallet";
-import {WalletProvider} from "./wallet-provider";
+import {AccountProvider} from "./account-provider";
 import {
     AppBar,
     Box,
-    Button,
     createMuiTheme,
-    Divider,
-    IconButton,
     ThemeProvider,
     Toolbar,
     Typography,
 } from "@material-ui/core";
-import {Currency} from "../client/currency";
 import ETH from "../eth.json";
-import {ArrowBack} from "@material-ui/icons"
 import {blue, pink} from "@material-ui/core/colors";
-import {useLoggedPromise} from "./logger-hooks";
+import {useLoggedObservable} from "./logger-hooks";
 import {AccountSelect} from "./account-select";
-import {EthersProviderStatus, useEthersProvider} from "./useEthersProvider";
+import {ConnectionSourceManager, Account} from "../client/providers";
+import {MetamaskSource} from "../client/providers/metamask";
+import {WalletConnectSource} from "../client/providers/wallet-connect";
+import WalletConnect from "@walletconnect/browser";
+import QRCodeModal from "@walletconnect/qrcode-modal";
+import {InfuraSource} from "../client/providers/infura";
+import {MemPool} from "../client/mempool";
+import {ProviderPool} from "../client/mempool/provider";
+import {LocalStoragePool} from "../client/mempool/local-storage";
+import {BroadcastChannelPool} from "../client/mempool/broadcast-channel";
+import {BackButton} from "./back-button";
 
 export function App() {
-    const access = useEthersProvider();
+    const manager = useMemo(
+        () => new ConnectionSourceManager(
+            new MetamaskSource(
+                "metamask"
+            ),
+            new WalletConnectSource(
+                "wallet-connect",
+                new WalletConnect({
+                    bridge: 'https://bridge.walletconnect.org',
+                    qrcodeModal: QRCodeModal
+                })
+            ),
+            new InfuraSource(
+                "infura",
+                "08dc529f20ef46a1a543bd6a9a427de9",
+                3
+            )
+        ),
+        []
+    )
 
-    return <Router>
-        {
-            access.status === EthersProviderStatus.Detecting && <Box m={4}>
-                Looking for Ethereum provider...
-                <Divider />
-                Please wait...
-            </Box>
-        }
-        {
-            access.status === EthersProviderStatus.NotDetected && <Box m={4}>
-                <Typography>No Ethereum provider found.</Typography>
-                <br />
-                <Typography>Install one, Metamask is suggested.</Typography>
-                <Divider />
-                <Button onClick={access.retry}>Try again</Button>
-            </Box>
-        }
-        {
-            access.status === EthersProviderStatus.RequestingAccess && <Box m={4}>
-                <Typography>Accessing Ethereum...</Typography>
-                <Divider />
-                <Typography>(You may need to allow in your provider.)</Typography>
-            </Box>
-        }
-        {
-            access.status === EthersProviderStatus.AccessRejected && <Box m={4}>
-                <Typography>Rejected Ethereum access!</Typography>
-                <Divider />
-                <Button onClick={access.retry}>Try again</Button>
-            </Box>
-        }
-        {
-            access.status === EthersProviderStatus.Connecting && <Box m={4}>
-                Connecting to Ethereum...
-                <Divider />
-                Please wait...
-            </Box>
-        }
-        {
-            access.status === EthersProviderStatus.Disconnected && <Box m={4}>
-                <Typography>Disconnected Ethereum provider!</Typography>
-                <Divider />
-                <Button onClick={access.retry}>Try again</Button>
-            </Box>
-        }
-        {
-            access.status === EthersProviderStatus.Ready && <WithProvider provider={access.ethersProvider} />
-        }
-    </Router>
-}
+    const currency = useMemo(
+        () => ETH,
+        []
+    )
 
-export function WithProvider(
-    {
-        provider
-    }: {
-        provider: ethers.providers.Web3Provider
-    }
-) {
-    const currency: Currency = ETH;
-    const [addresses] = useLoggedPromise(
-        () => provider.listAccounts(),
-        [provider]
+    const preferredChainId = useMemo(
+        () => 3,
+        []
     )
-    const [selectedAddress, setAddress] = useState<string>();
-    const address = selectedAddress ?? addresses?.[0]
-    const signer = useMemo(
-        () => (address != null) ? provider.getSigner(address) : undefined,
-        [provider, address]
+
+    useEffect(
+        () => {
+            manager.setPreferredChainId(preferredChainId)
+        },
+        [manager, preferredChainId]
     )
-    const wallet = useMemo(
-        () => (address != null) && (signer != null) ? new Wallet(signer, address) : undefined,
-        [signer, address]
+
+    const [providers] = useLoggedObservable(
+        () => manager.providers$,
+        [manager]
+    );
+    const provider = providers?.[0];
+
+    const [wallets] = useLoggedObservable(
+        () => manager.wallets$,
+        [manager]
     )
+
+    const memPool = useMemo(
+        () => new MemPool(0),
+        []
+    )
+    window["wallets"] = wallets
+    window["mp"] = memPool
+    useEffect(
+        () => {
+            if (LocalStoragePool.available) {
+                memPool.registerSource(
+                    new LocalStoragePool()
+                )
+            }
+            if (BroadcastChannelPool.available) {
+                memPool.registerSource(
+                    new BroadcastChannelPool()
+                )
+            }
+        },
+        [memPool]
+    )
+
+    useEffect(
+        () => {
+            if (provider != undefined) {
+                const pool = new ProviderPool(provider)
+                memPool.registerSource(pool)
+                return () => memPool.unregisterSource(pool)
+            }
+        },
+        [memPool, provider]
+    )
+
     const client = useMemo(
-        () => new BaseClient(provider, currency),
-        [provider]
+        () => provider && new BaseClient(
+            memPool,
+            provider,
+            currency
+        ),
+        [memPool, provider, currency]
     )
 
     const theme = useMemo(
@@ -116,38 +130,35 @@ export function WithProvider(
         []
     )
 
-    const homeMatch = useRouteMatch({
-        path: ["/", "/:exchangerAddress"],
-        exact: true
-    });
-    const history = useHistory()
+    const [account, setAccount] = useState<Account>()
 
-    return <ThemeProvider theme={theme}>
-        <AppBar position="static">
-            <Toolbar>
-                {
-                    <IconButton disabled={!!homeMatch} onClick={() => history.goBack()} edge="start" color="inherit">
-                        <ArrowBack />
-                    </IconButton>
-                }
-                <Box flexGrow={1} />
-                <Typography variant="h6">Simple Exchanger</Typography>
-                <Box flexGrow={1} />
-                {
-                    addresses && addresses.length > 0 &&
-                    <AccountSelect address={address} addresses={addresses} setAddress={setAddress} />
-                }
-            </Toolbar>
-        </AppBar>
-        <BaseClientProvider client={client}>
-            <WalletProvider wallet={wallet}>
-                <Switch>
-                    <Route exact path={["/", ""]} render={() => <Redirect to="/official.simple-exchanger.eth" />} />
-                    <Route path="/:exchangerAddress">
-                        <ExchangerPage />
-                    </Route>
-                </Switch>
-            </WalletProvider>
-        </BaseClientProvider>
-    </ThemeProvider>
+    return <Router>
+        <ThemeProvider theme={theme}>
+            <AppBar position="static">
+                <Toolbar>
+                    <BackButton />
+                    <Typography variant="h6">Simple Exchanger</Typography>
+                    <Typography variant="subtitle1"><>
+                        &nbsp;|&nbsp;
+                        {provider == undefined && "No provider connected!"}
+                        {provider == undefined || `Chain ID: ${provider.chainId}`}
+                    </></Typography>
+                    <Box flexGrow={1} />
+                    {wallets && <AccountSelect wallets={wallets} setAccount={setAccount} />}
+                </Toolbar>
+            </AppBar>
+            <AccountProvider account={account}>
+                {client && <BaseClientProvider client={client}>
+                    <AccountProvider account={account}>
+                        <Switch>
+                            <Route exact path={["/", ""]} render={() => <Redirect to="/official.simple-exchanger.eth" />} />
+                            <Route path="/:exchangerAddress">
+                                <ExchangerPage />
+                            </Route>
+                        </Switch>
+                    </AccountProvider>
+                </BaseClientProvider>}
+            </AccountProvider>
+        </ThemeProvider>
+    </Router>
 }
