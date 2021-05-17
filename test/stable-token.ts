@@ -1,10 +1,10 @@
 import { ethers } from "hardhat";
-import {StableToken} from "../contracts/stable-token";
+import {TStableToken} from "../contracts/stable-token";
 import {deployStableToken} from "../deployment/stable-token";
 
 describe("StableToken", function() {
     let addresses: string[];
-    let stableToken: StableToken;
+    let stableToken: TStableToken;
 
     before(async function () {
         addresses = await Promise.all((await ethers.getSigners()).map(

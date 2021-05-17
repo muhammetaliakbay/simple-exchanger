@@ -2,11 +2,11 @@ import { ethers } from "hardhat";
 import { Contract } from "ethers";
 import {expect} from "chai";
 import {deploySortedLibrary} from "../deployment/sorted";
-import {SortedTest} from "../contracts/sorted-test";
+import {TSortedTest} from "../contracts/sorted-test";
 
 describe("SortedTest", function() {
     let sorted: Contract;
-    let sortedTest: SortedTest;
+    let sortedTest: TSortedTest;
 
     before(async function () {
         sorted = await deploySortedLibrary(ethers);

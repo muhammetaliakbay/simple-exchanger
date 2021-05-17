@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { Contract } from "ethers";
-import {OrderBook} from "../contracts/order-book";
-import {StableToken} from "../contracts/stable-token";
+import {TOrderBook} from "../contracts/order-book";
+import {TStableToken} from "../contracts/stable-token";
 import {deployOrderBook} from "../deployment/order-book";
 import {deployOrderLibrary} from "../deployment/order";
 import {deployStableToken} from "../deployment/stable-token";
@@ -9,8 +9,8 @@ import {deployStableToken} from "../deployment/stable-token";
 describe("OrderBook", function() {
     let addresses: string[];
 
-    let orderBook: OrderBook;
-    let stableToken: StableToken;
+    let orderBook: TOrderBook;
+    let stableToken: TStableToken;
     let order: Contract;
 
     before(async function () {

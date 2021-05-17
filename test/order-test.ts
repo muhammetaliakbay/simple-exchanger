@@ -2,13 +2,13 @@ import { ethers } from "hardhat";
 import { Contract } from "ethers";
 import {expect} from "chai";
 import {deployOrderLibrary} from "../deployment/order";
-import {OrderTest} from "../contracts/order-test";
+import {TOrderTest} from "../contracts/order-test";
 
 describe("OrderTest", function() {
     let addresses: string[];
 
     let order: Contract;
-    let orderTest: OrderTest;
+    let orderTest: TOrderTest;
 
     before(async function () {
         addresses = await Promise.all((await ethers.getSigners()).map(
